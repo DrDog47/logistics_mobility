@@ -2,7 +2,7 @@
 .history/
 .env
 instance/*
-__pycache__/
+**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -18,3 +18,4 @@ dist/
 build/
 *.egg
 *.egg-info/
+;

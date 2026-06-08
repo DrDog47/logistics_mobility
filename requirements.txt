@@ -3,10 +3,11 @@ Flask==3.0.3
 gunicorn==23.0.0
 
 # Database
-SQLAlchemy==2.0.36
+SQLAlchemy==2.0.50
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.7
 alembic==1.13.3
+psycopg[binary]==3.2.13  # PostgreSQL driver (postgresql+psycopg:// URLs)
 
 # Forms & validation
 Flask-WTF==1.2.1
@@ -16,11 +17,12 @@ marshmallow==3.22.0
 
 # Authentication
 Flask-Login==0.6.3
-bcrypt==4.2.0
+bcrypt==5.0.0
 
 # i18n
 Flask-Babel==4.0.0
 Babel==2.16.0
+pycountry==24.6.1
 
 # HTTP client (for NBP API)
 httpx==0.27.2

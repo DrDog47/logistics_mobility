@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Organisations') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Organisations') }}</h1>
+    {% if current_user.is_admin or current_user.is_fleet_manager %}
+    <a class="btn btn--primary" href="{{ url_for('organisations.create_organisation') }}">
+        + {{ _('New organisation') }}
+    </a>
+    {% endif %}
+</header>
+
+<section class="panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{ _('Name') }}</th>
+                <th>{{ _('National ID') }}</th>
+                <th>{{ _('Country') }}</th>
+                <th>{{ _('City') }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for o in organisations %}
+            <tr>
+                <td><a href="{{ url_for('organisations.show_organisation', org_id=o.uuid) }}">{{ o.name }}</a></td>
+                <td class="mono">{{ o.national_id }}</td>
+                <td><span class="pill">{{ o.country }}</span></td>
+                <td>{{ o.city }}</td>
+                <td class="row-actions"><a href="{{ url_for('organisations.show_organisation', org_id=o.uuid) }}">{{ _('View') }}</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="empty">{{ _('No organisations yet') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

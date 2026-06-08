@@ -16,12 +16,13 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, Regexp
 
+from app.db_types import uuid_or_none
 from app.trips.models import SegmentType
 
 
 class TripForm(FlaskForm):
-    driver_id = SelectField(_l("Driver"), coerce=int, validators=[DataRequired()])
-    vehicle_id = SelectField(_l("Vehicle (truck)"), coerce=int, validators=[Optional()])
+    driver_id = SelectField(_l("Driver"), coerce=uuid_or_none, validators=[DataRequired()])
+    vehicle_id = SelectField(_l("Vehicle (tractor)"), coerce=uuid_or_none, validators=[Optional()])
     trip_number = StringField(
         _l("Trip number"),
         validators=[DataRequired(), Length(max=32)],

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}
+{%- if document_type -%}{{ _('Edit document type') }}{%- else -%}{{ _('New document type') }}{%- endif -%}
+{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>
+        {% if document_type %}{{ _('Edit document type') }}{% else %}{{ _('New document type') }}{% endif %}
+    </h1>
+</header>
+
+<section class="panel">
+    <form method="post" class="form-grid">
+        {{ form.hidden_tag() }}
+        <div class="field">
+            {{ form.type.label }}{{ form.type(class="input input--mono") }}
+            {% if form.type.description %}<small class="muted">{{ form.type.description }}</small>{% endif %}
+            {% for e in form.type.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.entity_type.label }}{{ form.entity_type(class="input") }}
+            {% for e in form.entity_type.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field field--span-2">
+            {{ form.label.label }}{{ form.label(class="input") }}
+            {% for e in form.label.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-grid__actions">
+            <a class="btn btn--ghost" href="{{ url_for('documents.list_document_types') }}">{{ _('Cancel') }}</a>
+            {{ form.submit(class="btn btn--primary") }}
+        </div>
+    </form>
+</section>
+{% endblock %}

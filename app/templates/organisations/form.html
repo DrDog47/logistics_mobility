@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}
+{%- if organisation -%}{{ _('Edit organisation') }}{%- else -%}{{ _('New organisation') }}{%- endif -%}
+{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>
+        {% if organisation %}{{ _('Edit organisation') }}: {{ organisation.name }}
+        {% else %}{{ _('New organisation') }}{% endif %}
+    </h1>
+</header>
+
+<section class="panel">
+    <form method="post" class="form-grid">
+        {{ form.hidden_tag() }}
+        <div class="field field--span-2">
+            {{ form.name.label }}{{ form.name(class="input") }}
+            {% for e in form.name.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.national_id.label }}{{ form.national_id(class="input input--mono") }}
+            {% for e in form.national_id.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.country.label }}{{ form.country(class="input") }}
+            {% for e in form.country.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.city.label }}{{ form.city(class="input") }}
+            {% for e in form.city.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field field--span-2">
+            {{ form.address.label }}{{ form.address(class="input") }}
+            {% for e in form.address.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-grid__actions">
+            <a class="btn btn--ghost" href="{{ url_for('organisations.list_organisations') }}">{{ _('Cancel') }}</a>
+            {{ form.submit(class="btn btn--primary") }}
+        </div>
+    </form>
+</section>
+{% endblock %}

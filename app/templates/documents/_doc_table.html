@@ -1,0 +1,50 @@
+{# Renders a document list with expiry badges.
+   Caller sets: documents (iterable), doc_kind ('driver' | 'vehicle'),
+   can_edit (bool). #}
+{% set rows = documents | rejectattr('is_deleted') | list %}
+{% if rows %}
+<table class="table">
+    <thead>
+        <tr>
+            <th>{{ _('Type') }}</th>
+            <th>{{ _('Number') }}</th>
+            <th>{{ _('Valid') }}</th>
+            <th>{{ _('Status') }}</th>
+            <th>{{ _('Scans') }}</th>
+            {% if can_edit %}<th></th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for doc in rows %}
+        {% set st = document_status(doc.document_type, doc.end_date) %}
+        <tr>
+            <td>{{ doc.document_type.replace('_', ' ') }}</td>
+            <td class="mono">{{ doc.document_id or '—' }}</td>
+            <td>{{ doc.start_date or '—' }} → {{ doc.end_date or '—' }}</td>
+            <td><span class="badge badge--{{ st.level }}">{{ st.label }}</span></td>
+            <td>
+                {% if doc.file_links %}
+                {% for link in doc.file_links %}
+                <a href="{{ link }}" target="_blank" rel="noopener">{{ _('file %(n)d', n=loop.index) }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+                {% else %}—{% endif %}
+            </td>
+            {% if can_edit %}
+            <td class="row-actions">
+                <a href="{{ url_for('documents.edit_' ~ doc_kind ~ '_document', doc_id=doc.uuid) }}">{{ _('Edit') }}</a>
+                <form method="post"
+                      action="{{ url_for('documents.delete_' ~ doc_kind ~ '_document', doc_id=doc.uuid) }}"
+                      onsubmit="return confirm('{{ _('Delete this document?') }}')" class="inline-form">
+                    {{ csrf_field() if csrf_field }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="link-btn">{{ _('Delete') }}</button>
+                </form>
+            </td>
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">{{ _('No documents yet') }}</p>
+{% endif %}

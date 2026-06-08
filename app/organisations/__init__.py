@@ -1,0 +1,1 @@
+"""Organisation blueprint — employer companies (PRD §7)."""

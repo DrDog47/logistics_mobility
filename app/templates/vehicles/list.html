@@ -17,26 +17,22 @@
             <tr>
                 <th>{{ _('Plate') }}</th>
                 <th>{{ _('Type') }}</th>
-                <th>{{ _('Make / Model') }}</th>
-                <th>{{ _('Year') }}</th>
-                <th>{{ _('VIN') }}</th>
+                <th>{{ _('Brand / Model') }}</th>
+                <th>VIN</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
             {% for v in vehicles %}
             <tr>
-                <td class="mono"><a href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.id) }}">{{ v.plate }}</a></td>
-                <td><span class="pill pill--{{ v.vehicle_type.value }}">{{ v.vehicle_type.value }}</span></td>
-                <td>
-                    {% if v.make or v.model %}{{ v.make or '' }} {{ v.model or '' }}{% else %}<span class="muted">—</span>{% endif %}
-                </td>
-                <td>{{ v.year or '—' }}</td>
-                <td class="mono">{{ v.vin or '—' }}</td>
-                <td class="row-actions"><a href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.id) }}">{{ _('View') }}</a></td>
+                <td class="mono"><a href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.uuid) }}">{{ v.registration_plate }}</a></td>
+                <td><span class="pill pill--{{ v.vehicle_type }}">{{ v.vehicle_type }}</span></td>
+                <td>{{ v.brand }} {{ v.model }}</td>
+                <td class="mono">{{ v.vin }}</td>
+                <td class="row-actions"><a href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.uuid) }}">{{ _('View') }}</a></td>
             </tr>
             {% else %}
-            <tr><td colspan="6" class="empty">{{ _('No vehicles registered yet') }}</td></tr>
+            <tr><td colspan="5" class="empty">{{ _('No vehicles registered yet') }}</td></tr>
             {% endfor %}
         </tbody>
     </table>

@@ -1,18 +1,39 @@
 services:
+  db:
+    image: postgres:16
+    container_name: mobility_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mobility}
+      POSTGRES_USER: ${POSTGRES_USER:-mobility}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mobility}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mobility} -d ${POSTGRES_DB:-mobility}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   app:
     build: .
     container_name: mobility_payroll
     restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "8000:8000"
     environment:
       FLASK_ENV: production
       SECRET_KEY: ${SECRET_KEY:?SECRET_KEY env var is required}
-      DATABASE_URL: sqlite:////app/instance/payroll.db
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-mobility}:${POSTGRES_PASSWORD:-mobility}@db:5432/${POSTGRES_DB:-mobility}
       DEFAULT_LANGUAGE: pl
       NBP_API_BASE: https://api.nbp.pl/api
     volumes:
-      - ./instance:/app/instance
       - ./data:/app/data:ro
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
@@ -20,3 +41,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
+
+volumes:
+  pgdata:

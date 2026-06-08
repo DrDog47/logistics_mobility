@@ -27,6 +27,7 @@ Notes:
 
 from __future__ import annotations
 
+import uuid
 from collections import defaultdict
 from datetime import UTC, datetime
 from decimal import ROUND_HALF_UP, Decimal
@@ -347,7 +348,7 @@ def calculate(period: PayrollPeriod, contract: "DriverContract") -> None:
 
 
 def _aggregate_posted_segments(
-    *, driver_id: int, period_start, period_end
+    *, driver_id: uuid.UUID, period_start, period_end
 ) -> list[CountryAggregate]:
     rows = (
         db.session.execute(
@@ -376,7 +377,7 @@ def _aggregate_posted_segments(
     ]
 
 
-def _compute_days_abroad(*, driver_id: int, period_start, period_end) -> int:
+def _compute_days_abroad(*, driver_id: uuid.UUID, period_start, period_end) -> int:
     """Distinct work_dates with ANY segment outside PL.
 
     Phase 2 approximation. Phase 3 (DDD parser) refines this to also capture

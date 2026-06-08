@@ -14,9 +14,11 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, NumberRange, Optional
 
+from app.db_types import uuid_or_none
+
 
 class PayrollPeriodForm(FlaskForm):
-    driver_id = SelectField(_l("Driver"), coerce=int, validators=[DataRequired()])
+    driver_id = SelectField(_l("Driver"), coerce=uuid_or_none, validators=[DataRequired()])
     year = IntegerField(
         _l("Year"),
         validators=[DataRequired(), NumberRange(min=2022, max=2099)],

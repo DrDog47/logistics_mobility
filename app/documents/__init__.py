@@ -1,0 +1,1 @@
+"""Document blueprint — driver & vehicle documents with expiry tracking (PRD §4, §6)."""

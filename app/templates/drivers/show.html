@@ -14,7 +14,7 @@
         </p>
     </div>
     {% if current_user.is_admin or current_user.is_fleet_manager %}
-    <a class="btn btn--ghost" href="{{ url_for('drivers.edit_driver', driver_id=driver.id) }}">
+    <a class="btn btn--ghost" href="{{ url_for('drivers.edit_driver', driver_id=driver.uuid) }}">
         {{ _('Edit') }}
     </a>
     {% endif %}
@@ -25,17 +25,42 @@
         <h2>{{ _('Identification') }}</h2>
     </header>
     <dl class="kv">
+        <dt>{{ _('Organisation') }}</dt>
+        <dd>
+            {% if driver.organisation %}
+            <a href="{{ url_for('organisations.show_organisation', org_id=driver.organisation.uuid) }}">{{ driver.organisation.name }}</a>
+            {% else %}—{% endif %}
+        </dd>
+        <dt>{{ _('Birth date') }}</dt><dd>{{ driver.birth_date or '—' }}</dd>
+        <dt>{{ _('National ID') }}</dt><dd class="mono">{{ driver.identification_id or '—' }}</dd>
         <dt>PESEL</dt><dd class="mono">{{ driver.pesel or '—' }}</dd>
         <dt>{{ _('Passport') }}</dt><dd class="mono">{{ driver.passport_number or '—' }}</dd>
         <dt>{{ _('Tachograph card') }}</dt><dd class="mono">{{ driver.tachograph_card_number or '—' }}</dd>
+        <dt>{{ _('Phone') }}</dt><dd>{{ driver.phone or '—' }}</dd>
+        <dt>{{ _('Notes') }}</dt><dd>{{ driver.notes or '—' }}</dd>
     </dl>
+</section>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Documents') }}</h2>
+        {% if current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
+        <a class="btn btn--ghost" href="{{ url_for('documents.new_driver_document', driver_id=driver.uuid) }}">
+            + {{ _('Add document') }}
+        </a>
+        {% endif %}
+    </header>
+    {% set documents = driver.documents %}
+    {% set doc_kind = 'driver' %}
+    {% set can_edit = current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
+    {% include "documents/_doc_table.html" %}
 </section>
 
 <section class="panel">
     <header class="panel__head">
         <h2>{{ _('Contracts') }}</h2>
         {% if current_user.is_admin or current_user.is_accountant %}
-        <a class="btn btn--ghost" href="{{ url_for('drivers.add_contract', driver_id=driver.id) }}">
+        <a class="btn btn--ghost" href="{{ url_for('drivers.add_contract', driver_id=driver.uuid) }}">
             + {{ _('Add contract') }}
         </a>
         {% endif %}

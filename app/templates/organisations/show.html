@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ organisation.name }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <div>
+        <h1>{{ organisation.name }}</h1>
+        <p class="muted"><span class="pill">{{ organisation.country }}</span> · {{ organisation.city }}</p>
+    </div>
+    {% if current_user.is_admin or current_user.is_fleet_manager %}
+    <div class="page-head__actions">
+        <a class="btn btn--ghost" href="{{ url_for('organisations.edit_organisation', org_id=organisation.uuid) }}">{{ _('Edit') }}</a>
+        <form method="post"
+              action="{{ url_for('organisations.delete_organisation', org_id=organisation.uuid) }}"
+              onsubmit="return confirm('{{ _('Delete this organisation?') }}')" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn--ghost">{{ _('Delete') }}</button>
+        </form>
+    </div>
+    {% endif %}
+</header>
+
+<section class="panel">
+    <dl class="kv">
+        <dt>{{ _('National ID') }}</dt><dd class="mono">{{ organisation.national_id }}</dd>
+        <dt>{{ _('Country') }}</dt><dd>{{ organisation.country }}</dd>
+        <dt>{{ _('City') }}</dt><dd>{{ organisation.city }}</dd>
+        <dt>{{ _('Address') }}</dt><dd>{{ organisation.address }}</dd>
+    </dl>
+</section>
+
+<section class="panel">
+    <header class="panel__head"><h2>{{ _('Drivers') }}</h2></header>
+    {% set active_drivers = organisation.drivers | rejectattr('is_deleted') | list %}
+    {% if active_drivers %}
+    <ul class="plain-list">
+        {% for d in active_drivers %}
+        <li><a href="{{ url_for('drivers.show_driver', driver_id=d.uuid) }}">{{ d.full_name }}</a></li>
+        {% endfor %}
+    </ul>
+    {% else %}<p class="empty">{{ _('No drivers') }}</p>{% endif %}
+</section>
+
+<section class="panel">
+    <header class="panel__head"><h2>{{ _('Vehicles') }}</h2></header>
+    {% set active_vehicles = organisation.vehicles | rejectattr('is_deleted') | list %}
+    {% if active_vehicles %}
+    <ul class="plain-list">
+        {% for v in active_vehicles %}
+        <li><a href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.uuid) }}">{{ v.registration_plate }}</a> — {{ v.brand }} {{ v.model }}</li>
+        {% endfor %}
+    </ul>
+    {% else %}<p class="empty">{{ _('No vehicles') }}</p>{% endif %}
+</section>
+{% endblock %}

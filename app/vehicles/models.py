@@ -1,41 +1,61 @@
-"""Vehicle model: trucks and trailers."""
+"""Vehicle model: tractors and trailers (PRD §5)."""
 
 from __future__ import annotations
 
-import enum
-from datetime import UTC, date, datetime
+import uuid
+from datetime import date
 
-from sqlalchemy import Date, DateTime, Enum, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Date, ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.db_types import JsonB, PrdStandardMixin, UuidType
 from app.extensions import db
 
 
-class VehicleType(str, enum.Enum):
-    TRUCK = "truck"      # Tractor / cab unit (has tachograph)
-    TRAILER = "trailer"  # Semi-trailer (no tachograph)
+class VehicleType:
+    """Allowed ``vehicle_type`` values (plain strings, not a DB enum — PRD §5.4)."""
+
+    TRACTOR = "tractor"   # Tractor unit / truck
+    TRAILER = "trailer"   # Semi-trailer
 
 
-class Vehicle(db.Model):
+VEHICLE_TYPE_CHOICES: list[tuple[str, str]] = [
+    (VehicleType.TRACTOR, "Tractor"),
+    (VehicleType.TRAILER, "Trailer"),
+]
+
+
+class Vehicle(PrdStandardMixin, db.Model):
     __tablename__ = "vehicles"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
-
-    plate: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
-    vehicle_type: Mapped[VehicleType] = mapped_column(Enum(VehicleType), nullable=False)
-    vin: Mapped[str | None] = mapped_column(String(17), unique=True, nullable=True)
-    make: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    model: Mapped[str | None] = mapped_column(String(64), nullable=True)
-    year: Mapped[int | None] = mapped_column(Integer, nullable=True)
-
-    purchase_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    vehicle_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    vin: Mapped[str] = mapped_column(String(17), unique=True, nullable=False)
+    brand: Mapped[str] = mapped_column(String(100), nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    registration_plate: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    acquisition_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    manufacture_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
+    organisation_uuid: Mapped[uuid.UUID] = mapped_column(
+        UuidType,
+        ForeignKey("organisation.uuid", ondelete="RESTRICT"),
         nullable=False,
+        index=True,
+    )
+    extra: Mapped[dict | None] = mapped_column(JsonB, nullable=True)
+
+    organisation = relationship("Organisation", back_populates="vehicles")
+    documents = relationship(
+        "VehicleDocument",
+        back_populates="vehicle",
+        order_by="VehicleDocument.end_date",
     )
 
+    @property
+    def id(self) -> uuid.UUID:
+        """Legacy alias for the primary key (templates/url_for use ``id``)."""
+        return self.uuid
+
     def __repr__(self) -> str:
-        return f"<Vehicle {self.plate} ({self.vehicle_type.value})>"
+        return f"<Vehicle {self.registration_plate} ({self.vehicle_type})>"

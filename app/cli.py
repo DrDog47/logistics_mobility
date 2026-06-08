@@ -57,3 +57,50 @@ def register_cli(app: Flask) -> None:
         """Create all tables (use only when not using Alembic migrations)."""
         db.create_all()
         click.secho("Database tables created.", fg="green")
+
+    @app.cli.command("seed-document-types")
+    def seed_document_types() -> None:
+        """Populate the document_type catalogue from the base constant lists."""
+        from app.documents.constants import BASE_DOCUMENT_TYPES
+        from app.documents.models import DocumentType
+
+        created = 0
+        for entity_type, entries in BASE_DOCUMENT_TYPES.items():
+            for code, label in entries:
+                exists = db.session.execute(
+                    db.select(DocumentType).where(
+                        DocumentType.type == code,
+                        DocumentType.entity_type == entity_type,
+                    )
+                ).scalar_one_or_none()
+                if exists:
+                    continue
+                db.session.add(
+                    DocumentType(type=code, entity_type=entity_type, label=label)
+                )
+                created += 1
+        db.session.commit()
+        click.secho(f"Seeded {created} document type(s).", fg="green")
+
+    @app.cli.command("seed-org")
+    @click.option("--name", default="Default Sp. z o.o.", help="Company name")
+    @click.option("--national-id", default="0000000000", help="NIP / national ID")
+    @click.option("--country", default="POL", help="ISO 3166-1 alpha-3")
+    @click.option("--city", default="Białystok", help="City")
+    @click.option("--address", default="—", help="Legal address")
+    def seed_org(name: str, national_id: str, country: str, city: str, address: str) -> None:
+        """Create a starter organisation (drivers/vehicles require one)."""
+        from app.organisations.models import Organisation
+
+        existing = db.session.execute(
+            db.select(Organisation).where(Organisation.national_id == national_id)
+        ).scalar_one_or_none()
+        if existing:
+            click.secho(f"Organisation '{existing.name}' already exists.", fg="yellow")
+            return
+        org = Organisation(
+            name=name, national_id=national_id, country=country, city=city, address=address
+        )
+        db.session.add(org)
+        db.session.commit()
+        click.secho(f"Organisation '{org.name}' created ({org.uuid}).", fg="green")

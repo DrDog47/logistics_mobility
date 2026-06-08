@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}
+{%- if document -%}{{ _('Edit document') }}{%- else -%}{{ _('New document') }}{%- endif -%}
+{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>
+        {% if document %}{{ _('Edit document') }}{% else %}{{ _('New document') }}{% endif %}
+        · {{ driver.full_name }}
+    </h1>
+</header>
+
+<section class="panel">
+    <form method="post" class="form-grid">
+        {{ form.hidden_tag() }}
+        <div class="field">
+            {{ form.document_type.label }}{{ form.document_type(class="input") }}
+            {% for e in form.document_type.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.document_id.label }}{{ form.document_id(class="input input--mono") }}
+            {% for e in form.document_id.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.start_date.label }}{{ form.start_date(class="input") }}
+            {% for e in form.start_date.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.end_date.label }}{{ form.end_date(class="input") }}
+            {% for e in form.end_date.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.categories.label }}{{ form.categories(class="input input--mono") }}
+            {% for e in form.categories.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field field--span-2">
+            {{ form.file_links.label }}{{ form.file_links(class="input", rows="3") }}
+            {% for e in form.file_links.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-grid__actions">
+            <a class="btn btn--ghost" href="{{ url_for('drivers.show_driver', driver_id=driver.uuid) }}">{{ _('Cancel') }}</a>
+            {{ form.submit(class="btn btn--primary") }}
+        </div>
+    </form>
+</section>
+{% endblock %}

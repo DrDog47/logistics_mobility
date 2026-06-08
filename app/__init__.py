@@ -8,7 +8,7 @@ from pathlib import Path
 from flask import Flask, request, session
 
 from app.config import Config, get_config
-from app.extensions import babel, db, login_manager, migrate
+from app.extensions import babel, csrf, db, login_manager, migrate
 
 
 def create_app(config: type[Config] | None = None) -> Flask:
@@ -32,10 +32,18 @@ def create_app(config: type[Config] | None = None) -> Flask:
     _init_polish_params(app)
     _register_blueprints(app)
     _register_locale_selector(app)
+    _register_template_globals(app)
     _register_healthcheck(app)
     _register_cli(app)
 
     return app
+
+
+def _register_template_globals(app: Flask) -> None:
+    """Expose helpers used directly inside Jinja templates."""
+    from app.documents.status import document_status
+
+    app.jinja_env.globals["document_status"] = document_status
 
 
 def _init_rates_registry(app: Flask) -> None:
@@ -68,24 +76,29 @@ def _init_extensions(app: Flask) -> None:
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "warning"
     babel.init_app(app, locale_selector=_select_locale)
+    csrf.init_app(app)
 
 
 def _register_blueprints(app: Flask) -> None:
     from app.auth.routes import bp as auth_bp
+    from app.documents.routes import bp as documents_bp
     from app.drivers.routes import bp as drivers_bp
     from app.main.routes import bp as main_bp
-    from app.payroll.routes import bp as payroll_bp
+    from app.organisations.routes import bp as organisations_bp
     from app.rates.routes import bp as rates_bp
     from app.trips.routes import bp as trips_bp
     from app.vehicles.routes import bp as vehicles_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(organisations_bp, url_prefix="/organisations")
     app.register_blueprint(drivers_bp, url_prefix="/drivers")
     app.register_blueprint(vehicles_bp, url_prefix="/vehicles")
+    app.register_blueprint(documents_bp)
     app.register_blueprint(trips_bp, url_prefix="/trips")
-    app.register_blueprint(payroll_bp, url_prefix="/payroll")
     app.register_blueprint(rates_bp, url_prefix="/rates")
+    # NOTE: payroll blueprint is intentionally not registered for now —
+    # the payroll module is parked while the document system is built out.
 
 
 def _select_locale() -> str:

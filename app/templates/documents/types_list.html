@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Document types') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Document types') }}</h1>
+    {% if current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
+    <a class="btn btn--primary" href="{{ url_for('documents.new_document_type') }}">
+        + {{ _('New document type') }}
+    </a>
+    {% endif %}
+</header>
+
+<section class="panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{ _('Type code') }}</th>
+                <th>{{ _('Display name') }}</th>
+                <th>{{ _('Belongs to') }}</th>
+                {% if current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}<th></th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for dt in document_types %}
+            <tr>
+                <td class="mono">{{ dt.type }}</td>
+                <td>{{ dt.label or '—' }}</td>
+                <td><span class="pill">{{ dt.entity_type }}</span></td>
+                {% if current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
+                <td class="row-actions">
+                    <a href="{{ url_for('documents.edit_document_type', type_id=dt.uuid) }}">{{ _('Edit') }}</a>
+                    <form method="post"
+                          action="{{ url_for('documents.delete_document_type', type_id=dt.uuid) }}"
+                          onsubmit="return confirm('{{ _('Delete this document type?') }}')" class="inline-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="link-btn">{{ _('Delete') }}</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr><td colspan="4" class="empty">{{ _('No document types yet') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

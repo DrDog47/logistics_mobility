@@ -41,10 +41,11 @@ def list_periods():
 def create_period():
     form = PayrollPeriodForm()
     drivers = db.session.execute(
-        db.select(Driver).where(Driver.is_active.is_(True))
+        db.select(Driver)
+        .where(Driver.is_active.is_(True), Driver.is_deleted.is_(False))
         .order_by(Driver.last_name, Driver.first_name)
     ).scalars().all()
-    form.driver_id.choices = [(d.id, d.full_name) for d in drivers]
+    form.driver_id.choices = [(str(d.uuid), d.full_name) for d in drivers]
 
     if form.validate_on_submit():
         # ---- Determine EUR/PLN rate -------------------------------------

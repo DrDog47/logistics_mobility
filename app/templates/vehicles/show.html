@@ -1,28 +1,49 @@
 {% extends "base.html" %}
-{% block title %}{{ vehicle.plate }}{% endblock %}
+{% block title %}{{ vehicle.registration_plate }}{% endblock %}
 
 {% block content %}
 <header class="page-head">
     <div>
-        <h1>{{ vehicle.plate }}</h1>
+        <h1>{{ vehicle.registration_plate }}</h1>
         <p class="muted">
-            <span class="pill pill--{{ vehicle.vehicle_type.value }}">{{ vehicle.vehicle_type.value }}</span>
-            {% if vehicle.make or vehicle.model %} · {{ vehicle.make }} {{ vehicle.model }}{% endif %}
-            {% if vehicle.year %} · {{ vehicle.year }}{% endif %}
+            <span class="pill pill--{{ vehicle.vehicle_type }}">{{ vehicle.vehicle_type }}</span>
+            · {{ vehicle.brand }} {{ vehicle.model }}
         </p>
     </div>
     {% if current_user.is_admin or current_user.is_fleet_manager %}
-    <a class="btn btn--ghost" href="{{ url_for('vehicles.edit_vehicle', vehicle_id=vehicle.id) }}">{{ _('Edit') }}</a>
+    <a class="btn btn--ghost" href="{{ url_for('vehicles.edit_vehicle', vehicle_id=vehicle.uuid) }}">{{ _('Edit') }}</a>
     {% endif %}
 </header>
 
 <section class="panel">
     <dl class="kv">
-        <dt>VIN</dt><dd class="mono">{{ vehicle.vin or '—' }}</dd>
-        <dt>{{ _('Purchase date') }}</dt><dd>{{ vehicle.purchase_date or '—' }}</dd>
+        <dt>{{ _('Organisation') }}</dt>
+        <dd>
+            {% if vehicle.organisation %}
+            <a href="{{ url_for('organisations.show_organisation', org_id=vehicle.organisation.uuid) }}">{{ vehicle.organisation.name }}</a>
+            {% else %}—{% endif %}
+        </dd>
+        <dt>VIN</dt><dd class="mono">{{ vehicle.vin }}</dd>
+        <dt>{{ _('Acquisition date') }}</dt><dd>{{ vehicle.acquisition_date or '—' }}</dd>
+        <dt>{{ _('Manufacture date') }}</dt><dd>{{ vehicle.manufacture_date or '—' }}</dd>
         <dt>{{ _('Status') }}</dt>
         <dd>{% if vehicle.is_active %}<span class="pill">{{ _('Active') }}</span>
             {% else %}<span class="pill pill--inactive">{{ _('Inactive') }}</span>{% endif %}</dd>
     </dl>
+</section>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Documents') }}</h2>
+        {% if current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
+        <a class="btn btn--ghost" href="{{ url_for('documents.new_vehicle_document', vehicle_id=vehicle.uuid) }}">
+            + {{ _('Add document') }}
+        </a>
+        {% endif %}
+    </header>
+    {% set documents = vehicle.documents %}
+    {% set doc_kind = 'vehicle' %}
+    {% set can_edit = current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
+    {% include "documents/_doc_table.html" %}
 </section>
 {% endblock %}

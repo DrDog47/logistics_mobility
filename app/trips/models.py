@@ -12,12 +12,14 @@ wage applies. Only CABOTAGE and CROSS_TRADE count as "delegowanie".
 from __future__ import annotations
 
 import enum
+import uuid
 from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from sqlalchemy import Date, DateTime, Enum, ForeignKey, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.db_types import UuidType
 from app.extensions import db
 
 
@@ -51,13 +53,15 @@ class Trip(db.Model):
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    driver_id: Mapped[int] = mapped_column(
-        ForeignKey("drivers.id", ondelete="RESTRICT"),
+    driver_id: Mapped[uuid.UUID] = mapped_column(
+        UuidType,
+        ForeignKey("drivers.uuid", ondelete="RESTRICT"),
         nullable=False,
         index=True,
     )
-    vehicle_id: Mapped[int | None] = mapped_column(
-        ForeignKey("vehicles.id", ondelete="SET NULL"),
+    vehicle_id: Mapped[uuid.UUID | None] = mapped_column(
+        UuidType,
+        ForeignKey("vehicles.uuid", ondelete="SET NULL"),
         nullable=True,
     )
 

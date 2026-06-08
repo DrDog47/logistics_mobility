@@ -23,10 +23,11 @@
 
             <ul class="nav-links">
                 <li><a href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a></li>
+                <li><a href="{{ url_for('organisations.list_organisations') }}">{{ _('Organisations') }}</a></li>
                 <li><a href="{{ url_for('drivers.list_drivers') }}">{{ _('Drivers') }}</a></li>
                 <li><a href="{{ url_for('vehicles.list_vehicles') }}">{{ _('Vehicles') }}</a></li>
                 <li><a href="{{ url_for('trips.list_trips') }}">{{ _('Trips') }}</a></li>
-                <li><a href="{{ url_for('payroll.list_periods') }}">{{ _('Payroll') }}</a></li>
+                <li><a href="{{ url_for('documents.list_document_types') }}">{{ _('Document types') }}</a></li>
                 <li><a href="{{ url_for('rates.list_countries') }}">{{ _('Rates') }}</a></li>
             </ul>
 

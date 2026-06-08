@@ -6,7 +6,7 @@
 {% block content %}
 <header class="page-head">
     <h1>
-        {% if vehicle %}{{ _('Edit vehicle') }}: {{ vehicle.plate }}
+        {% if vehicle %}{{ _('Edit vehicle') }}: {{ vehicle.registration_plate }}
         {% else %}{{ _('New vehicle') }}{% endif %}
     </h1>
 </header>
@@ -15,8 +15,8 @@
     <form method="post" class="form-grid">
         {{ form.hidden_tag() }}
         <div class="field">
-            {{ form.plate.label }}{{ form.plate(class="input input--mono") }}
-            {% for e in form.plate.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+            {{ form.registration_plate.label }}{{ form.registration_plate(class="input input--mono") }}
+            {% for e in form.registration_plate.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
         <div class="field">
             {{ form.vehicle_type.label }}{{ form.vehicle_type(class="input") }}
@@ -27,16 +27,22 @@
             {% for e in form.vin.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
         <div class="field">
-            {{ form.make.label }}{{ form.make(class="input") }}
+            {{ form.brand.label }}{{ form.brand(class="input") }}
+            {% for e in form.brand.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
         <div class="field">
             {{ form.model.label }}{{ form.model(class="input") }}
+            {% for e in form.model.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field field--span-2">
+            {{ form.organisation_uuid.label }}{{ form.organisation_uuid(class="input") }}
+            {% for e in form.organisation_uuid.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
         <div class="field">
-            {{ form.year.label }}{{ form.year(class="input") }}
+            {{ form.acquisition_date.label }}{{ form.acquisition_date(class="input") }}
         </div>
         <div class="field">
-            {{ form.purchase_date.label }}{{ form.purchase_date(class="input") }}
+            {{ form.manufacture_date.label }}{{ form.manufacture_date(class="input") }}
         </div>
         <div class="form-grid__actions">
             <a class="btn btn--ghost" href="{{ url_for('vehicles.list_vehicles') }}">{{ _('Cancel') }}</a>

@@ -23,16 +23,14 @@ class Config:
     # Core
     SECRET_KEY: str = os.environ.get("SECRET_KEY", "")
 
-    # Database
+    # Database — PostgreSQL (psycopg3 driver). Override with DATABASE_URL.
     SQLALCHEMY_DATABASE_URI: str = os.environ.get(
         "DATABASE_URL",
-        f"sqlite:///{PROJECT_ROOT / 'instance' / 'payroll.db'}",
+        "postgresql+psycopg://mobility:mobility@localhost:5432/mobility",
     )
     SQLALCHEMY_TRACK_MODIFICATIONS: bool = False
     SQLALCHEMY_ENGINE_OPTIONS: dict = {
         "pool_pre_ping": True,
-        # SQLite specific: WAL mode for better concurrent reads
-        "connect_args": {"check_same_thread": False},
     }
 
     # i18n
@@ -43,6 +41,10 @@ class Config:
 
     # External APIs
     NBP_API_BASE: str = os.environ.get("NBP_API_BASE", "https://api.nbp.pl/api")
+
+    # CSRF — global registered (templates can call csrf_token()), enforcement
+    # deferred until AJAX POSTs are wired to send the token.
+    WTF_CSRF_ENABLED: bool = False
 
     # Session
     SESSION_COOKIE_HTTPONLY: bool = True

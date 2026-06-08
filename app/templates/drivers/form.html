@@ -29,15 +29,33 @@
         </div>
 
         <div class="field">
+            {{ form.birth_date.label }}
+            {{ form.birth_date(class="input") }}
+            {% for e in form.birth_date.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
             {{ form.nationality.label }}
-            {{ form.nationality(class="input input--mono") }}
+            {{ form.nationality(class="input") }}
             {% for e in form.nationality.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="field field--span-2">
+            {{ form.organisation_uuid.label }}
+            {{ form.organisation_uuid(class="input") }}
+            {% for e in form.organisation_uuid.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
 
         <div class="field">
             {{ form.hire_date.label }}
             {{ form.hire_date(class="input") }}
             {% for e in form.hire_date.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+            {{ form.identification_id.label }}
+            {{ form.identification_id(class="input input--mono") }}
+            {% for e in form.identification_id.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
 
         <div class="field">
@@ -52,10 +70,22 @@
             {% for e in form.passport_number.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
 
-        <div class="field field--span-2">
+        <div class="field">
             {{ form.tachograph_card_number.label }}
             {{ form.tachograph_card_number(class="input input--mono") }}
             {% for e in form.tachograph_card_number.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+            {{ form.phone.label }}
+            {{ form.phone(class="input") }}
+            {% for e in form.phone.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="field field--span-2">
+            {{ form.notes.label }}
+            {{ form.notes(class="input", rows="3") }}
+            {% for e in form.notes.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
 
         <div class="form-grid__actions">

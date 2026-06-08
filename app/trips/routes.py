@@ -19,18 +19,22 @@ bp = Blueprint("trips", __name__)
 
 def _populate_driver_and_vehicle_choices(form: TripForm) -> None:
     drivers = db.session.execute(
-        db.select(Driver).where(Driver.is_active.is_(True))
+        db.select(Driver)
+        .where(Driver.is_active.is_(True), Driver.is_deleted.is_(False))
         .order_by(Driver.last_name, Driver.first_name)
     ).scalars().all()
-    form.driver_id.choices = [(d.id, d.full_name) for d in drivers]
+    form.driver_id.choices = [(str(d.uuid), d.full_name) for d in drivers]
 
-    trucks = db.session.execute(
+    tractors = db.session.execute(
         db.select(Vehicle).where(
             Vehicle.is_active.is_(True),
-            Vehicle.vehicle_type == VehicleType.TRUCK,
-        ).order_by(Vehicle.plate)
+            Vehicle.is_deleted.is_(False),
+            Vehicle.vehicle_type == VehicleType.TRACTOR,
+        ).order_by(Vehicle.registration_plate)
     ).scalars().all()
-    form.vehicle_id.choices = [(0, "—")] + [(v.id, v.plate) for v in trucks]
+    form.vehicle_id.choices = [("", "—")] + [
+        (str(v.uuid), v.registration_plate) for v in tractors
+    ]
 
 
 @bp.route("/")

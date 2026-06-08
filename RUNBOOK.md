@@ -1,15 +1,16 @@
 # Запуск Mobility Payroll с нуля
 
-Инструкция собрана из текущего состояния проекта Phase 2: 89 файлов, Docker + Python 3.12 + Flask + SQLite + Flask-Migrate.
+Инструкция собрана из текущего состояния проекта: Docker + Python 3.14 + Flask + **PostgreSQL 16** + Flask-Migrate (psycopg3).
 
 > **TL;DR для опытных пользователей**:
 > 1. `unzip mobility_payroll.zip && cd mobility_payroll`
 > 2. `cp .env.example .env && python3 -c "import secrets; print(secrets.token_hex(32))"` — вставить в `.env` как `SECRET_KEY=...`
-> 3. `docker compose up -d --build`
-> 4. `docker compose exec app flask init-db`
-> 5. `docker compose exec app flask create-admin --login admin --email admin@example.local --name "Admin"`
-> 6. `docker compose exec app flask nbp fetch EUR`
-> 7. Открыть http://localhost:8000
+> 3. `docker compose up -d --build` — поднимет два сервиса: `db` (PostgreSQL) и `app`
+> 4. `docker compose exec app flask db upgrade` — применит миграции (создаст схему)
+> 5. `docker compose exec app flask seed-org` — создаст стартовую организацию (нужна для водителей/ТС)
+> 6. `docker compose exec app flask create-admin --login admin --email admin@example.local --name "Admin"`
+> 7. `docker compose exec app flask nbp fetch EUR`
+> 8. Открыть http://localhost:8000
 
 ---
 
@@ -17,8 +18,8 @@
 
 **Один из двух вариантов:**
 
-- **Рекомендуемый:** Docker Engine 24+ и Docker Compose v2 ([установка для Ubuntu](https://docs.docker.com/engine/install/ubuntu/), [для Windows](https://docs.docker.com/desktop/install/windows-install/), [для macOS](https://docs.docker.com/desktop/install/mac-install/))
-- **Альтернатива (для разработки):** Python 3.12+, pip, virtualenv
+- **Рекомендуемый:** Docker Engine 24+ и Docker Compose v2 ([установка для Ubuntu](https://docs.docker.com/engine/install/ubuntu/), [для Windows](https://docs.docker.com/desktop/install/windows-install/), [для macOS](https://docs.docker.com/desktop/install/mac-install/)). PostgreSQL поднимается как сервис `db` внутри compose — отдельно ставить СУБД не нужно.
+- **Альтернатива (для разработки):** Python 3.14+, pip, virtualenv **и доступный сервер PostgreSQL 14+** (можно поднять только контейнер БД: `docker compose up -d db`). Для подключения к БД полезен клиент `psql`.
 
 **Доступ к интернету для NBP API** — нужен только при автозагрузке курсов EUR/PLN (можно вводить вручную и работать без сети).
 
@@ -66,7 +67,7 @@ SECRET_KEY=7a3f9e2c8b6d1a4e0f5c2b9a8d7e6f3c1a5b9d2e8f4a7c3b6e1d8a5f2c9b7e4a
 docker compose up -d --build
 ```
 
-Первая сборка займёт 2-5 минут (скачивание python:3.12-slim, установка зависимостей, компиляция переводов). Последующие запуски — 5 секунд.
+Первая сборка займёт 2-5 минут (скачивание python:3.14-slim, установка зависимостей, компиляция переводов). Последующие запуски — 5 секунд.
 
 Проверка что контейнер живой:
 
@@ -94,13 +95,29 @@ docker compose logs app --tail=30
 
 ### 3.2 Инициализация БД
 
+`docker compose up -d` уже поднял сервис `db` (PostgreSQL 16) и дождался его healthcheck перед стартом `app`. Данные БД хранятся в именованном volume `pgdata` (не в `./instance`). Схему создаём миграциями Alembic:
+
 ```bash
-docker compose exec app flask init-db
+docker compose exec app flask db upgrade
 ```
 
-Должно вывести: `Database tables created.`
+В логах увидите `Running upgrade -> <revision>, initial postgres prd schema`. Команда идемпотентна — на уже мигрированной БД это no-op.
 
-Файл БД создастся в `./instance/payroll.db` на хосте (volume-маппинг из docker-compose.yml). Если хотите подключиться напрямую: `sqlite3 instance/payroll.db`.
+> `flask init-db` (`db.create_all()`) оставлен только для быстрых экспериментов без Alembic. В обычной эксплуатации используйте `flask db upgrade`, чтобы версия схемы отслеживалась в таблице `alembic_version`.
+
+Затем создайте стартовую **организацию** — без неё нельзя завести водителя или ТС (поле `organisation_uuid` обязательно):
+
+```bash
+docker compose exec app flask seed-org
+# Organisation 'Default Sp. z o.o.' created (<uuid>).
+```
+
+Подключиться к БД напрямую (логин/пароль/имя берутся из `.env`, по умолчанию `mobility`/`mobility`/`mobility`):
+
+```bash
+docker compose exec db psql -U mobility -d mobility -c "\dt"
+# с хоста (порт 5432 проброшен): PGPASSWORD=mobility psql -h localhost -U mobility -d mobility
+```
 
 ### 3.3 Создание admin'а
 
@@ -150,27 +167,31 @@ http://localhost:8000
 
 ```bash
 # В директории проекта
-python3.12 -m venv .venv
+python3.14 -m venv .venv
 source .venv/bin/activate          # Linux/macOS
 # или .venv\Scripts\activate       # Windows PowerShell
 
 pip install -r requirements.txt
 
+# Поднять только БД (PostgreSQL) в Docker — приложение запускаем локально
+docker compose up -d db
+
 # Конфиг
 export FLASK_ENV=development        # запустит DevelopmentConfig (DEBUG=on)
 export SECRET_KEY="dev-only-key"    # для прода нужен настоящий
-export DATABASE_URL="sqlite:///$(pwd)/instance/payroll.db"
+export DATABASE_URL="postgresql+psycopg://mobility:mobility@localhost:5432/mobility"
 
-mkdir -p instance
-
-# Инициализация БД и admin
-flask --app run init-db
+# Схема, организация и admin
+flask --app run db upgrade
+flask --app run seed-org
 flask --app run create-admin --login admin --email admin@local --name Dev
 
 # Старт
 python run.py
 # или: flask --app run run --port 8000
 ```
+
+> Эти же значения уже прописаны в `.env` (`DATABASE_URL`, `POSTGRES_*`), так что обычно достаточно `docker compose up -d db` и `flask --app run db upgrade`.
 
 Откройте http://localhost:8000.
 
@@ -255,21 +276,63 @@ Submit → попадёте на страницу периода с разбив
 
 ### 6.1 Бэкапы
 
-База — SQLite, лежит в `./instance/payroll.db`. Бэкап = копия файла:
+База — PostgreSQL, данные в volume `pgdata`. Бэкап делается логически через `pg_dump` (контейнер `db` может быть запущен — горячий бэкап):
 
 ```bash
-# Холодный бэкап (остановите контейнер)
-docker compose down
-cp instance/payroll.db backups/payroll-$(date +%Y%m%d).db
-docker compose up -d
+mkdir -p backups
 
-# Или горячий бэкап через sqlite (требует sqlite3 на хосте)
-sqlite3 instance/payroll.db ".backup backups/payroll-$(date +%Y%m%d).db"
+# Дамп всей БД (custom-формат, удобен для pg_restore)
+docker compose exec -T db pg_dump -U mobility -Fc mobility > backups/payroll-$(date +%Y%m%d).dump
+
+# Или человекочитаемый SQL
+docker compose exec -T db pg_dump -U mobility mobility > backups/payroll-$(date +%Y%m%d).sql
 ```
 
-Восстановление: просто положите файл обратно как `instance/payroll.db` и перезапустите.
+Восстановление из дампа:
 
-Для production рекомендую cron'ом класть бэкапы в S3/B2/локальный NAS с retention 30+ дней.
+```bash
+# из custom-формата (.dump)
+docker compose exec -T db pg_restore -U mobility -d mobility --clean --if-exists < backups/payroll-YYYYMMDD.dump
+
+# из SQL-дампа
+docker compose exec -T db psql -U mobility -d mobility < backups/payroll-YYYYMMDD.sql
+```
+
+Для production рекомендую cron'ом класть `pg_dump` в S3/B2/локальный NAS с retention 30+ дней.
+
+### 6.1.1 Миграции схемы БД (Alembic / Flask-Migrate)
+
+Изменения схемы версионируются Alembic'ом. Файлы миграций лежат в `migrations/versions/`.
+
+**Применить миграции к production** (после `docker compose up -d --build` с новым образом):
+
+```bash
+# Перед апгрейдом — обязательно бэкап (см. 6.1)
+docker compose exec -T db pg_dump -U mobility -Fc mobility > backups/payroll-pre-upgrade-$(date +%Y%m%d).dump
+
+# Применить все новые миграции
+docker compose exec app flask db upgrade
+```
+
+При первом запуске на чистой БД Alembic создаст таблицу `alembic_version` и применит миграции последовательно. На уже мигрированной БД — no-op.
+
+**Полезные команды:**
+
+```bash
+docker compose exec app flask db current     # какая ревизия применена
+docker compose exec app flask db history     # граф миграций
+docker compose exec app flask db downgrade -1  # откат на одну ревизию (если припрёт)
+```
+
+**Создание новой миграции** (после правок в моделях):
+
+```bash
+docker compose exec app flask db migrate -m "описание изменения"
+# проверить сгенерированный файл в migrations/versions/, поправить если нужно
+git add migrations/versions/ && git commit -m "migration: ..."
+```
+
+> На PostgreSQL `ALTER TABLE` выполняется нативно и транзакционно (Alembic уже работает в `transactional DDL`) — обёртка `batch_alter_table`, нужная для SQLite, здесь не требуется. UUID-первичные ключи получают server-default `gen_random_uuid()` (расширение `pgcrypto` включается первой строкой начальной миграции).
 
 ### 6.2 Обновление ставок по странам
 
@@ -357,7 +420,9 @@ flask nbp list --currency EUR --limit 50  # что в кеше
 | `RuntimeError: SECRET_KEY environment variable is required` | Нет `.env` или пустой ключ | Раздел 2: создайте `.env` с реальным ключом |
 | `RateRegistryError: No country rate YAML files found` | Не примонтирована `data/` | Проверьте `docker-compose.yml`, должен быть volume `./data:/app/data:ro` |
 | `PolishParamsError: No pl_YYYY.yaml files found` | То же что выше, или удалили tax YAML | Проверьте что `data/tax_rules/pl_2026.yaml` существует |
-| 500 ошибка при логине: `no such table: users` | Не запустили `flask init-db` | `docker compose exec app flask init-db` |
+| Ошибка при логине: `relation "users" does not exist` | Не применили миграции | `docker compose exec app flask db upgrade` |
+| `connection refused` / `could not connect to server` на старте `app` | Сервис `db` ещё не готов или не поднят | `docker compose ps` (ждите `db` → healthy); `docker compose up -d db` |
+| `null value in column "organisation_uuid"` при создании водителя/ТС | Нет ни одной организации | `docker compose exec app flask seed-org` или заведите её в UI (Organisations) |
 | `NbpError: NBP API request failed` | Нет интернета, или ваш регион блокирует api.nbp.pl | При создании периода снимите галочку auto-fetch и введите курс вручную |
 | `NbpError: NBP API returned 404 for EUR ...` через 11 дней walkback | Запросили слишком старую/будущую дату | Используйте дату не далее +/- недели от сегодня |
 | Calculation failed: `EUR/PLN exchange rate must be set` | Курс 0 или не передан | Введите в форме периода нормальный курс (3-6) |
@@ -383,9 +448,10 @@ Phase 2 закрывает базовый scope расчёта зарплаты 
 ## 9. Деинсталляция / полный сброс
 
 ```bash
-docker compose down -v          # удалит контейнер и сети (но не данные)
-rm -rf instance/                # удалит БД (НЕОБРАТИМО)
+docker compose down -v          # удалит контейнеры, сети И volume pgdata (данные БД — НЕОБРАТИМО)
 docker image rm mobility_payroll-app  # удалит образ
 ```
+
+> Флаг `-v` теперь удаляет и базу: данные PostgreSQL живут в volume `pgdata`, а не в файле `./instance`. Если нужно сохранить данные — сначала сделайте `pg_dump` (см. 6.1), потом `docker compose down -v`.
 
 После этого, чтобы вернуться к работе — повторите с шага 2.
