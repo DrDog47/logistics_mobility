@@ -1,0 +1,52 @@
+# Polish payroll parameters for 2025
+# ==================================
+# Historical data — kept for recalculation of past payroll periods.
+
+year: 2025
+currency: PLN
+
+average_wage_pln_monthly: 8673.00      # przeciętne wynagrodzenie 2025
+minimum_wage_pln_monthly: 4666.00      # minimalne wynagrodzenie 2025
+
+international_driver:
+  zus_diet_eur_per_day: 60.00
+  zus_diet_threshold_pln_monthly: 8673.00
+  zus_diet_floor_pln_monthly: 8673.00
+  pit_diet_eur_per_day: 20.00
+  pit_diet_threshold_pln_monthly: 0
+
+sanitariaty:
+  pln_per_day_abroad: 60.00
+  exempt_from_zus: true
+  exempt_from_pit: true
+
+zus_employee:
+  emerytalne_pct: 9.76
+  rentowe_pct: 1.50
+  chorobowe_pct: 2.45
+
+zus_employer:
+  emerytalne_pct: 9.76
+  rentowe_pct: 6.50
+  wypadkowe_pct: 1.67
+  fp_pct: 2.45
+  fgsp_pct: 0.10
+
+zdrowotne:
+  rate_pct: 9.00
+
+pit:
+  bracket_1_threshold_pln_annual: 120000.00
+  bracket_1_rate_pct: 12.00
+  bracket_2_rate_pct: 32.00
+  free_amount_pln_annual: 30000.00
+  monthly_tax_reduction_pln: 300.00
+  monthly_employee_costs_pln: 250.00
+
+sources:
+  - url: https://www.zus.pl/baza-wiedzy/skladki-wskazniki-odsetki/wskazniki/minimalne-i-przecietne-wynagrodzenie
+    title: "ZUS wskaźniki 2025"
+
+verified:
+  at: "2025-12-15"
+  by: "system-seed"

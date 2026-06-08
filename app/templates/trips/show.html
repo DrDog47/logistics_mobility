@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Trip') }} {{ trip.trip_number }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <div>
+        <h1>{{ _('Trip') }} {{ trip.trip_number }}
+            <span class="pill pill--{{ trip.status.value }}">{{ trip.status.value }}</span>
+        </h1>
+        <p class="muted">
+            <a href="{{ url_for('drivers.show_driver', driver_id=trip.driver_id) }}">{{ trip.driver.full_name }}</a>
+            {% if trip.vehicle %} · <span class="mono">{{ trip.vehicle.plate }}</span>{% endif %}
+            · {{ trip.start_date }} → {{ trip.end_date }}
+        </p>
+    </div>
+    <div style="display: flex; gap: var(--space-2);">
+        {% if trip.status.value == 'draft' and trip.segments %}
+        <form method="post" action="{{ url_for('trips.confirm_trip', trip_id=trip.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn--primary" type="submit">{{ _('Confirm trip') }}</button>
+        </form>
+        {% endif %}
+        {% if trip.status.value == 'draft' %}
+        <a class="btn btn--ghost" href="{{ url_for('trips.add_segment', trip_id=trip.id) }}">+ {{ _('Add segment') }}</a>
+        {% endif %}
+    </div>
+</header>
+
+<section class="kpis">
+    <div class="kpi"><span class="kpi__label">{{ _('Segments') }}</span><span class="kpi__value">{{ trip.segments|length }}</span></div>
+    <div class="kpi"><span class="kpi__label">{{ _('Total hours') }}</span><span class="kpi__value">{{ "%.1f"|format(trip.total_hours) }}</span></div>
+    <div class="kpi"><span class="kpi__label">{{ _('Posted hours') }}</span><span class="kpi__value">{{ "%.1f"|format(trip.posting_hours) }}</span>
+        <span class="kpi__hint">{{ _('cabotage + cross-trade') }}</span></div>
+</section>
+
+<section class="panel">
+    <header class="panel__head"><h2>{{ _('Segments') }}</h2></header>
+    {% if trip.segments %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>{{ _('Date') }}</th>
+                <th>{{ _('Country') }}</th>
+                <th>{{ _('Type') }}</th>
+                <th>{{ _('Hours') }}</th>
+                <th>{{ _('Rate name') }}</th>
+                <th>{{ _('Notes') }}</th>
+                {% if trip.status.value == 'draft' %}<th></th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in trip.segments %}
+            <tr>
+                <td class="mono">{{ s.sequence }}</td>
+                <td class="mono">{{ s.work_date }}</td>
+                <td><span class="pill">{{ s.country }}</span></td>
+                <td>
+                    <span class="pill pill--{{ s.segment_type.value }}">
+                        {{ s.segment_type.value }}
+                    </span>
+                    {% if s.segment_type.is_posting %}<span class="pill" title="{{ _('Subject to foreign sector wage') }}">📌</span>{% endif %}
+                </td>
+                <td class="mono">{{ "%.2f"|format(s.work_hours) }}</td>
+                <td class="mono">{{ s.rate_name }}</td>
+                <td>{{ s.notes or '' }}</td>
+                {% if trip.status.value == 'draft' %}
+                <td class="row-actions">
+                    <form method="post" action="{{ url_for('trips.delete_segment', trip_id=trip.id, segment_id=s.id) }}"
+                          onsubmit="return confirm('{{ _('Delete this segment?') }}');" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn--ghost" style="padding: 2px 8px;">✕</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">{{ _('No segments yet. Add the first one with the button above.') }}</p>
+    {% endif %}
+</section>
+
+{% if trip.notes %}
+<section class="panel">
+    <header class="panel__head"><h2>{{ _('Notes') }}</h2></header>
+    <div style="padding: var(--space-4) var(--space-5); white-space: pre-wrap;">{{ trip.notes }}</div>
+</section>
+{% endif %}
+{% endblock %}

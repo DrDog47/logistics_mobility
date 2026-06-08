@@ -1,0 +1,22 @@
+services:
+  app:
+    build: .
+    container_name: mobility_payroll
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      FLASK_ENV: production
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY env var is required}
+      DATABASE_URL: sqlite:////app/instance/payroll.db
+      DEFAULT_LANGUAGE: pl
+      NBP_API_BASE: https://api.nbp.pl/api
+    volumes:
+      - ./instance:/app/instance
+      - ./data:/app/data:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

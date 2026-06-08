@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}
+{%- if vehicle -%}{{ _('Edit vehicle') }}{%- else -%}{{ _('New vehicle') }}{%- endif -%}
+{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>
+        {% if vehicle %}{{ _('Edit vehicle') }}: {{ vehicle.plate }}
+        {% else %}{{ _('New vehicle') }}{% endif %}
+    </h1>
+</header>
+
+<section class="panel">
+    <form method="post" class="form-grid">
+        {{ form.hidden_tag() }}
+        <div class="field">
+            {{ form.plate.label }}{{ form.plate(class="input input--mono") }}
+            {% for e in form.plate.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.vehicle_type.label }}{{ form.vehicle_type(class="input") }}
+            {% for e in form.vehicle_type.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field field--span-2">
+            {{ form.vin.label }}{{ form.vin(class="input input--mono") }}
+            {% for e in form.vin.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.make.label }}{{ form.make(class="input") }}
+        </div>
+        <div class="field">
+            {{ form.model.label }}{{ form.model(class="input") }}
+        </div>
+        <div class="field">
+            {{ form.year.label }}{{ form.year(class="input") }}
+        </div>
+        <div class="field">
+            {{ form.purchase_date.label }}{{ form.purchase_date(class="input") }}
+        </div>
+        <div class="form-grid__actions">
+            <a class="btn btn--ghost" href="{{ url_for('vehicles.list_vehicles') }}">{{ _('Cancel') }}</a>
+            {{ form.submit(class="btn btn--primary") }}
+        </div>
+    </form>
+</section>
+{% endblock %}

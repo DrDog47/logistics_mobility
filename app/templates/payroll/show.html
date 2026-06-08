@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}{{ period.driver.full_name }} {{ period.period_label }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <div>
+        <h1>{{ period.driver.full_name }} — {{ period.period_label }}
+            <span class="pill pill--{{ period.status.value }}">{{ period.status.value }}</span>
+        </h1>
+        <p class="muted">
+            EUR/PLN: <strong>{{ period.eur_pln_rate }}</strong>
+            {% if period.nbp_rate %}
+                <span class="muted">(NBP table {{ period.nbp_rate.table_no or '?' }}, {{ period.nbp_rate.effective_date }})</span>
+            {% else %}
+                <span class="muted">(manual)</span>
+            {% endif %}
+            · {{ _('Days abroad') }}: <strong>{{ period.effective_days_abroad }}</strong>
+            {% if period.days_abroad_override is not none %}<span class="muted">({{ _('override') }})</span>{% endif %}
+            {% if period.calculated_at %} · {{ period.calculated_at.strftime('%Y-%m-%d %H:%M UTC') }}{% endif %}
+            {% if period.calculator_version %} · v{{ period.calculator_version }}{% endif %}
+        </p>
+    </div>
+    <div style="display: flex; gap: var(--space-2);">
+        {% if (current_user.is_admin or current_user.is_accountant) and period.status.value != 'approved' %}
+        <form method="post" action="{{ url_for('payroll.recalculate', period_id=period.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn--ghost" type="submit">{{ _('Recalculate') }}</button>
+        </form>
+        {% endif %}
+        {% if (current_user.is_admin or current_user.is_accountant) and period.status.value == 'calculated' %}
+        <form method="post" action="{{ url_for('payroll.approve', period_id=period.id) }}"
+              onsubmit="return confirm('{{ _('Approve and freeze this period?') }}');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn--primary" type="submit">{{ _('Approve') }}</button>
+        </form>
+        {% endif %}
+    </div>
+</header>
+
+<section class="kpis">
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Gross') }}</span>
+        <span class="kpi__value">{{ "%.2f"|format(period.total_gross_pln or 0) }}</span>
+        <span class="kpi__hint">PLN</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('ZUS base') }}</span>
+        <span class="kpi__value">{{ "%.2f"|format(period.zus_base_pln or 0) }}</span>
+        <span class="kpi__hint">PLN ({{ _('after virtual diet') }})</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('PIT base') }}</span>
+        <span class="kpi__value">{{ "%.2f"|format(period.pit_base_pln or 0) }}</span>
+        <span class="kpi__hint">PLN ({{ _('after virtual diet') }})</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Net pay') }}</span>
+        <span class="kpi__value">{{ "%.2f"|format(period.total_net_pln or 0) }}</span>
+        <span class="kpi__hint">PLN ({{ _('incl. sanitariaty') }})</span>
+    </div>
+</section>
+
+<section class="panel">
+    <header class="panel__head"><h2>{{ _('Breakdown') }}</h2></header>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{ _('Type') }}</th>
+                <th>{{ _('Country') }}</th>
+                <th>{{ _('Hours') }}</th>
+                <th>{{ _('Rate') }}</th>
+                <th>{{ _('Native') }}</th>
+                <th>{{ _('PLN') }}</th>
+                <th>{{ _('Description') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in period.lines %}
+            <tr>
+                <td><span class="pill pill--{{ line.line_type.value }}">{{ line.line_type.value.replace('_', ' ') }}</span></td>
+                <td>{% if line.country %}<span class="pill">{{ line.country }}</span>{% else %}—{% endif %}</td>
+                <td class="mono">{% if line.hours is not none %}{{ "%.2f"|format(line.hours) }}{% else %}—{% endif %}</td>
+                <td class="mono">{% if line.rate_hourly_native %}{{ line.rate_hourly_native }} {{ line.rate_currency }}{% else %}—{% endif %}</td>
+                <td class="mono">{% if line.amount_native is not none %}{{ "%.2f"|format(line.amount_native) }} {{ line.rate_currency }}{% else %}—{% endif %}</td>
+                <td class="mono"><strong>{{ "%.2f"|format(line.amount_pln) }}</strong></td>
+                <td>{{ line.description }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="empty">{{ _('No line items — period not calculated yet') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+
+<section class="panel">
+    <header class="panel__head"><h2>{{ _('Pay summary') }}</h2></header>
+    <dl class="kv">
+        <dt>{{ _('Foreign sector wage') }}</dt>
+        <dd class="mono">{% if period.foreign_wage_pln %}{{ "%.2f"|format(period.foreign_wage_pln) }}{% else %}0.00{% endif %} PLN</dd>
+        <dt>{{ _('Equalization') }}</dt>
+        <dd class="mono">{% if period.equalization_pln %}{{ "%.2f"|format(period.equalization_pln) }}{% else %}0.00{% endif %} PLN</dd>
+        <dt><strong>{{ _('Gross') }}</strong></dt>
+        <dd class="mono"><strong>{{ "%.2f"|format(period.total_gross_pln or 0) }} PLN</strong></dd>
+        <dt>{{ _('− ZUS employee (13.71%)') }}</dt>
+        <dd class="mono">{{ "%.2f"|format(period.zus_employee_pln or 0) }} PLN</dd>
+        <dt>{{ _('− Health insurance (9%)') }}</dt>
+        <dd class="mono">{{ "%.2f"|format(period.zdrowotne_pln or 0) }} PLN</dd>
+        <dt>{{ _('− PIT advance') }}</dt>
+        <dd class="mono">{{ "%.2f"|format(period.pit_advance_pln or 0) }} PLN</dd>
+        <dt>{{ _('+ Sanitariaty (exempt)') }}</dt>
+        <dd class="mono">{{ "%.2f"|format(period.sanitariaty_pln or 0) }} PLN</dd>
+        <dt><strong>{{ _('Net') }}</strong></dt>
+        <dd class="mono"><strong>{{ "%.2f"|format(period.total_net_pln or 0) }} PLN</strong></dd>
+    </dl>
+</section>
+
+<section class="panel">
+    <header class="panel__head"><h2>{{ _('Audit info') }}</h2></header>
+    <p class="muted" style="padding: var(--space-4) var(--space-5); font-size: 13px;">
+        {{ _('Phase 2 scope: virtual diets (ZUS −60 EUR/day above threshold, PIT −20 EUR/day from day 1), sanitariaty (60 PLN/day exempt), simplified ZUS/PIT calculation.') }}<br>
+        {{ _('PIT calculation is simplified: single 12%% bracket. Annual bracket-2 reconciliation deferred. Health insurance base simplified to (gross − ZUS social). Overtime, night work, leave, sick pay — Phase 6.') }}<br>
+        {{ _('Each foreign-wage line links to a CountryRateSnapshot. EUR/PLN rate cached from NBP if auto-fetched. The calculation remains reproducible even after data updates.') }}
+    </p>
+</section>
+{% endblock %}

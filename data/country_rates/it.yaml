@@ -1,0 +1,107 @@
+# Italy — country rate file
+# =========================
+# Italy has NO statutory national minimum wage. The binding floor is the
+# applicable CCNL (Contratto Collettivo Nazionale di Lavoro). For road
+# transport: CCNL Logistica, Trasporto Merci e Spedizione, renewed
+# 27 October 2025 with multi-year increments through 1 June 2027.
+#
+# CCNL minimums are expressed as monthly gross (paga base) for each
+# inquadramento (livello). Convert to hourly using the divisore orario,
+# which for this CCNL is based on 39h/week normal time.
+
+country: IT
+country_name_en: Italy
+country_name_pl: Włochy
+country_name_ru: Италия
+currency: EUR
+
+# 39h/week × 52/12 = 169 — but CCNL specifies divisore orario = 168
+default_hours_per_month: 168.0
+
+official_source:
+  primary_url: https://www.contrattotrasporti.it/
+  posting_portal: https://www.distaccoue.lavoro.gov.it/
+  cnel_archive: https://www.cnel.it/Archivio-Contratti
+  notes: |
+    No national statutory minimum. CCNL applies via Article 36 of the
+    Italian Constitution (right to fair pay) and through erga omnes
+    application by case law. PM compliance uses CCNL minimums.
+    Renewed 27 Oct 2025; increments scheduled 1 Jan 2026, 1 Jan 2027,
+    1 Jun 2027.
+
+# WARNING: Italian CCNL values below are SEED values from sector sources.
+# Direct confirmation against the CCNL contract text is recommended before
+# using in production — table values are split across paga base, contingenza,
+# EDR, and EPA elements that all sum to the minimum.
+
+periods:
+  - valid_from: "2025-01-01"
+    valid_to: "2025-12-31"
+    rates:
+      driver_b3:
+        monthly_gross: 1882.00
+        hourly: 11.20
+        description_en: "Personale viaggiante B3 (autista C+E) — base 2025"
+        description_pl: "Personel jeżdżący B3 (kierowca C+E) — baza 2025"
+      driver_3_super:
+        monthly_gross: 2207.00
+        hourly: 13.14
+        description_en: "3° Super (qualified driver / non-viaggiante) — 2025"
+        description_pl: "3° Super (kierowca wykwalifikowany) — 2025"
+    source_documents:
+      - url: https://www.contrattotrasporti.it/art-106-tabelle-retributive/
+        type: industry
+        title: "ContrattoTrasporti.it — Art. 106 Tabelle retributive"
+    verified:
+      at: "2025-03-15"
+      by: "system-seed"
+      notes: Seed values. Verify against CCNL text directly before audit.
+
+  - valid_from: "2026-01-01"
+    valid_to: "2026-12-31"
+    rates:
+      driver_b3:
+        monthly_gross: 1922.00   # +€40 second tranche per Assotir bulletin
+        hourly: 11.44
+        description_en: "Personale viaggiante B3 (autista C+E) — +€40 from 1 Jan 2026"
+        description_pl: "Personel jeżdżący B3 — +€40 od 1 stycznia 2026"
+      driver_3_super:
+        monthly_gross: 2247.00   # +€40 second tranche
+        hourly: 13.38
+        description_en: "3° Super — +€40 from 1 Jan 2026"
+        description_pl: "3° Super — +€40 od 1 stycznia 2026"
+    source_documents:
+      - url: https://www.assotir.it/notizie/news-generiche/ccnl-e-legge-di-bilancio-2026-novita-conferme-e-scadenze-per-le-imprese-di-autotrasporto-merci/
+        type: industry
+        title: "Assotir — CCNL increments 1 Jan 2026"
+      - url: https://ilccnl.it/contratto/ccnl/autotrasporto-merci-e-logistica
+        type: industry
+        title: "Il CCNL.it — Autotrasporto Merci e Logistica"
+    verified:
+      at: "2026-01-28"
+      by: "system-seed"
+      notes: |
+        Second tranche from CCNL renewal of 27 Oct 2025. Verify exact composition
+        (paga base + contingenza + EDR + EPA) against CCNL text.
+
+  - valid_from: "2027-01-01"
+    valid_to: null
+    rates:
+      driver_b3:
+        monthly_gross: 1962.00   # +€40 third tranche
+        hourly: 11.68
+        description_en: "Personale viaggiante B3 — third tranche 2027"
+        description_pl: "Personel jeżdżący B3 — trzecia transza 2027"
+      driver_3_super:
+        monthly_gross: 2287.00
+        hourly: 13.61
+        description_en: "3° Super — third tranche 2027"
+        description_pl: "3° Super — trzecia transza 2027"
+    source_documents:
+      - url: https://www.contrattotrasporti.it/
+        type: industry
+        title: "Renewal schedule per CCNL 27 Oct 2025"
+    verified:
+      at: "2026-01-28"
+      by: "system-seed"
+      notes: Scheduled per renewal. Re-verify closer to date.

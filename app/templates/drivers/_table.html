@@ -1,0 +1,40 @@
+<table id="drivers-table" class="table">
+    <thead>
+        <tr>
+            <th>{{ _('Name') }}</th>
+            <th>{{ _('Nationality') }}</th>
+            <th>{{ _('Tachograph card') }}</th>
+            <th>{{ _('Contract') }}</th>
+            <th>{{ _('Hired') }}</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in drivers %}
+        <tr>
+            <td>
+                <a href="{{ url_for('drivers.show_driver', driver_id=d.id) }}">
+                    {{ d.full_name }}
+                </a>
+            </td>
+            <td><span class="pill">{{ d.nationality }}</span></td>
+            <td class="mono">{{ d.tachograph_card_number or '—' }}</td>
+            <td>
+                {% if d.current_contract %}
+                    <span class="pill pill--{{ d.current_contract.contract_type.value }}">
+                        {{ d.current_contract.contract_type.value.replace('_', ' ') }}
+                    </span>
+                {% else %}
+                    <span class="muted">—</span>
+                {% endif %}
+            </td>
+            <td>{{ d.hire_date }}</td>
+            <td class="row-actions">
+                <a href="{{ url_for('drivers.show_driver', driver_id=d.id) }}">{{ _('View') }}</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="empty">{{ _('No drivers found') }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

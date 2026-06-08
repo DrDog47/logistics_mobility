@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Drivers') }} · {{ _('Mobility Payroll') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Drivers') }}</h1>
+    {% if current_user.has_role('admin', 'fleet_manager') or current_user.is_admin or current_user.is_fleet_manager %}
+    <a class="btn btn--primary" href="{{ url_for('drivers.create_driver') }}">
+        + {{ _('New driver') }}
+    </a>
+    {% endif %}
+</header>
+
+<section class="panel">
+    <div class="panel__toolbar">
+        <input
+            type="search"
+            name="q"
+            value="{{ search }}"
+            placeholder="{{ _('Search by name, PESEL, passport...') }}"
+            class="input"
+            hx-get="{{ url_for('drivers.list_drivers') }}"
+            hx-trigger="input changed delay:300ms, keyup[key=='Enter']"
+            hx-target="#drivers-table"
+            hx-swap="outerHTML"
+            autocomplete="off"
+        >
+    </div>
+
+    {% include "drivers/_table.html" %}
+</section>
+{% endblock %}

@@ -1,0 +1,78 @@
+# Polish payroll parameters for 2026
+# ==================================
+# Source: Ustawa budżetowa 2026, ZUS publication
+#         (przeciętne wynagrodzenie 9420 PLN/mc, minimum 4806 PLN/mc)
+#
+# This file controls the math in app/payroll/calculator/umowa_pracy.py for
+# year=2026. Each year gets its own file. Update via git PR.
+
+year: 2026
+currency: PLN
+
+# Monthly figures (PLN gross)
+average_wage_pln_monthly: 9420.00      # przeciętne wynagrodzenie (forecast)
+minimum_wage_pln_monthly: 4806.00      # minimalne wynagrodzenie za pracę
+
+# Virtual diet rules for international drivers
+# (Ustawa o czasie pracy kierowców after Mobility Package amendment, 2023)
+international_driver:
+  # 60 EUR/day reduces ZUS contribution base.
+  # Threshold: only applies if monthly gross income > average wage.
+  zus_diet_eur_per_day: 60.00
+  zus_diet_threshold_pln_monthly: 9420.00   # = average wage
+  zus_diet_floor_pln_monthly: 9420.00       # ZUS base never falls below this when diet applied
+
+  # 20 EUR/day reduces PIT base. No threshold — applies from day 1.
+  pit_diet_eur_per_day: 20.00
+  pit_diet_threshold_pln_monthly: 0          # no threshold
+
+# Sanitariaty reimbursement (separate from virtual diets)
+# Paid to driver, exempt from both ZUS and PIT.
+sanitariaty:
+  pln_per_day_abroad: 60.00
+  exempt_from_zus: true
+  exempt_from_pit: true
+
+# Employee ZUS contribution rates (percentages of zus_base_pln)
+# Sum: 13.71% — what's deducted from driver's gross
+zus_employee:
+  emerytalne_pct: 9.76
+  rentowe_pct: 1.50
+  chorobowe_pct: 2.45
+
+# Employer ZUS contribution rates (informational; not in net calc)
+zus_employer:
+  emerytalne_pct: 9.76
+  rentowe_pct: 6.50
+  wypadkowe_pct: 1.67   # default; varies by company risk category
+  fp_pct: 2.45          # Fundusz Pracy + Solidarnościowy
+  fgsp_pct: 0.10        # Fundusz Gwarantowanych Świadczeń Pracowniczych
+
+# Health insurance (zdrowotne) — separate base
+# Calculated as 9% of (gross - employee_zus_social)
+zdrowotne:
+  rate_pct: 9.00
+
+# PIT (income tax) — simplified scale tax
+pit:
+  bracket_1_threshold_pln_annual: 120000.00
+  bracket_1_rate_pct: 12.00
+  bracket_2_rate_pct: 32.00
+  free_amount_pln_annual: 30000.00         # kwota wolna od podatku
+  monthly_tax_reduction_pln: 300.00        # 1/12 of (30000 × 12%)
+  monthly_employee_costs_pln: 250.00       # koszty uzyskania przychodu (out-of-town: 300)
+
+# Source documents — track where these numbers came from
+sources:
+  - url: https://www.zus.pl/baza-wiedzy/skladki-wskazniki-odsetki/wskazniki/minimalne-i-przecietne-wynagrodzenie
+    title: "ZUS — minimalne i przeciętne wynagrodzenie"
+  - url: https://www.zus.pl/-/nowe-wysokosci-skladek-na-ubezpieczenia-spoleczne-w-2026-r.
+    title: "ZUS — składki na 2026 r."
+  - description: "Ustawa o czasie pracy kierowców (Dz.U.2023, poz.1523) art. 26f-26g"
+
+verified:
+  at: "2026-01-15"
+  by: "system-seed"
+  notes: |
+    Forecast values per draft budget 2026. Re-verify in March 2026 against
+    final published Monitor Polski announcement from Prezes GUS.

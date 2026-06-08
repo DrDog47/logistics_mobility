@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Dashboard') }} · {{ _('Mobility Payroll') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Dashboard') }}</h1>
+    <p class="muted">{{ _('Welcome back, %(name)s', name=current_user.full_name) }}</p>
+</header>
+
+<section class="kpis">
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Active drivers') }}</span>
+        <span class="kpi__value">{{ stats.drivers }}</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Active vehicles') }}</span>
+        <span class="kpi__value">{{ stats.vehicles }}</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Draft trips') }}</span>
+        <span class="kpi__value">{{ stats.draft_trips }}</span>
+        <span class="kpi__hint">{{ _('need confirmation') }}</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Calculated periods') }}</span>
+        <span class="kpi__value">{{ stats.draft_periods }}</span>
+        <span class="kpi__hint">{{ _('pending approval') }}</span>
+    </div>
+</section>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Quick actions') }}</h2>
+    </header>
+    <div class="quick-actions">
+        <a class="quick-action" href="{{ url_for('drivers.list_drivers') }}">
+            <span class="quick-action__title">{{ _('Drivers') }}</span>
+            <span class="quick-action__desc">{{ _('Manage drivers and their contracts') }}</span>
+        </a>
+        <a class="quick-action" href="{{ url_for('vehicles.list_vehicles') }}">
+            <span class="quick-action__title">{{ _('Vehicles') }}</span>
+            <span class="quick-action__desc">{{ _('Trucks and trailers') }}</span>
+        </a>
+        <a class="quick-action" href="{{ url_for('trips.list_trips') }}">
+            <span class="quick-action__title">{{ _('Trips') }}</span>
+            <span class="quick-action__desc">{{ _('Enter and classify trip segments') }}</span>
+        </a>
+        <a class="quick-action" href="{{ url_for('payroll.list_periods') }}">
+            <span class="quick-action__title">{{ _('Payroll') }}</span>
+            <span class="quick-action__desc">{{ _('Calculate Mobility Package salaries') }}</span>
+        </a>
+        <a class="quick-action" href="{{ url_for('rates.list_countries') }}">
+            <span class="quick-action__title">{{ _('Country rates') }}</span>
+            <span class="quick-action__desc">{{ _('Sector wages by country and date') }}</span>
+        </a>
+    </div>
+</section>
+{% endblock %}

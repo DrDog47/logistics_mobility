@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}{{ _('New payroll period') }}{% endblock %}
+
+{% block content %}
+<header class="page-head"><h1>{{ _('New payroll period') }}</h1></header>
+
+<section class="panel">
+    <div style="padding: var(--space-4) var(--space-5); background: var(--c-accent-bg); font-size: 12px;">
+        {{ _('Phase 2 calculation includes: base salary, foreign sector wage with equalization, sanitariaty, virtual ZUS/PIT diets and bases. Only CONFIRMED trips are included. ZUS/PIT amounts are NOT computed — only the bases that go into your accounting software.') }}
+    </div>
+    <form method="post" class="form-grid">
+        {{ form.hidden_tag() }}
+        <div class="field field--span-2">{{ form.driver_id.label }}{{ form.driver_id(class="input") }}
+            {% for e in form.driver_id.errors %}<div class="field__err">{{ e }}</div>{% endfor %}</div>
+        <div class="field">{{ form.year.label }}{{ form.year(class="input", id="form-year") }}</div>
+        <div class="field">{{ form.month.label }}{{ form.month(class="input", id="form-month") }}</div>
+        <div class="field field--span-2">
+            {{ form.eur_pln_rate.label }}
+            <div style="display: flex; gap: var(--space-2); align-items: stretch;">
+                {{ form.eur_pln_rate(class="input input--mono", id="form-rate", style="flex:1;") }}
+                <button type="button" id="btn-fetch-nbp" class="btn btn--ghost">
+                    🌐 {{ _('Fetch NBP') }}
+                </button>
+            </div>
+            <small class="muted" id="nbp-status">
+                {{ _('Standard convention: NBP table A, working day before last day of period month.') }}
+            </small>
+            {% for e in form.eur_pln_rate.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-grid__actions">
+            <a class="btn btn--ghost" href="{{ url_for('payroll.list_periods') }}">{{ _('Cancel') }}</a>
+            {{ form.submit(class="btn btn--primary") }}
+        </div>
+    </form>
+</section>
+
+<script>
+(function() {
+    const btn = document.getElementById('btn-fetch-nbp');
+    const yearInput = document.getElementById('form-year');
+    const monthInput = document.getElementById('form-month');
+    const rateInput = document.getElementById('form-rate');
+    const status = document.getElementById('nbp-status');
+    const hiddenDate = document.querySelector('input[name="nbp_rate_date"]');
+
+    btn.addEventListener('click', async function() {
+        const year = yearInput.value;
+        const month = monthInput.value;
+        if (!year || !month) {
+            status.textContent = '{{ _("Please pick year and month first.") }}';
+            return;
+        }
+        btn.disabled = true;
+        const oldText = btn.textContent;
+        btn.textContent = '⏳ {{ _("Fetching…") }}';
+        status.textContent = '';
+        try {
+            const url = '{{ url_for("payroll.fetch_nbp_rate") }}?year=' + year + '&month=' + month;
+            const resp = await fetch(url);
+            const data = await resp.json();
+            if (!resp.ok) {
+                status.textContent = '❌ ' + (data.error || 'NBP error');
+                status.style.color = 'var(--c-error)';
+                return;
+            }
+            rateInput.value = data.rate;
+            if (hiddenDate) hiddenDate.value = data.effective_date;
+            status.textContent = '✓ {{ _("NBP table A rate") }} ' + data.rate + ' {{ _("effective") }} ' + data.effective_date + (data.nbp_number ? ' (no. ' + data.nbp_number + ')' : '');
+            status.style.color = 'var(--c-success)';
+        } catch (err) {
+            status.textContent = '❌ ' + err.message;
+            status.style.color = 'var(--c-error)';
+        } finally {
+            btn.disabled = false;
+            btn.textContent = oldText;
+        }
+    });
+})();
+</script>
+{% endblock %}

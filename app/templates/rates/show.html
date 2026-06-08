@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ country.country_name_en }} · {{ _('Rates') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <div>
+        <h1>
+            {{ country.country_name_en }}
+            <span class="muted mono">({{ country.country }})</span>
+        </h1>
+        <p class="muted">
+            {{ _('Currency') }}: <strong>{{ country.currency }}</strong> ·
+            {{ _('Default hours/month') }}: <strong>{{ country.default_hours_per_month }}</strong>
+        </p>
+    </div>
+    <a class="btn btn--ghost" href="{{ url_for('rates.list_countries') }}">
+        ← {{ _('All countries') }}
+    </a>
+</header>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Official sources') }}</h2>
+    </header>
+    <dl class="kv">
+        <dt>{{ _('Primary source') }}</dt>
+        <dd><a href="{{ country.official_source_url }}" target="_blank" rel="noopener">{{ country.official_source_url }}</a></dd>
+        {% if country.posting_portal_url %}
+        <dt>{{ _('Posting portal') }}</dt>
+        <dd><a href="{{ country.posting_portal_url }}" target="_blank" rel="noopener">{{ country.posting_portal_url }}</a></dd>
+        {% endif %}
+    </dl>
+</section>
+
+{% if current_period %}
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Current period') }}: {{ current_period.valid_from }} → {{ current_period.valid_to or _('open') }}</h2>
+        <span class="pill">
+            {{ _('verified') }} {{ current_period.verified_at }} {{ _('by') }} {{ current_period.verified_by }}
+        </span>
+    </header>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{ _('Rate name') }}</th>
+                <th>{{ _('Hourly') }}</th>
+                <th>{{ _('Monthly') }}</th>
+                <th>{{ _('Description') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name, rate in current_period.rates.items() | sort %}
+            <tr>
+                <td class="mono">{{ name }}</td>
+                <td class="mono"><strong>{{ rate.hourly }}</strong> {{ country.currency }}</td>
+                <td class="mono">{% if rate.monthly_gross %}{{ rate.monthly_gross }}{% else %}—{% endif %}</td>
+                <td>
+                    {% if current_locale == 'pl' and rate.description_pl %}{{ rate.description_pl }}
+                    {% elif current_locale == 'ru' and rate.description_ru %}{{ rate.description_ru }}
+                    {% elif rate.description_en %}{{ rate.description_en }}
+                    {% else %}<span class="muted">—</span>{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% else %}
+<div class="flash flash--warning">
+    {{ _('No rate period covers today (%(date)s). Check the YAML — there may be a gap.', date=today) }}
+</div>
+{% endif %}
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('All periods') }} ({{ country.periods | length }})</h2>
+    </header>
+    {% for period in country.periods %}
+    <details class="period-block" {% if period == current_period %}open{% endif %}>
+        <summary>
+            <strong>{{ period.valid_from }} → {{ period.valid_to or _('open') }}</strong>
+            {% if period == current_period %}<span class="pill">{{ _('current') }}</span>{% endif %}
+            <span class="muted">· {{ period.rates | length }} {{ _('rates') }} ·
+                {{ _('verified') }} {{ period.verified_at }}</span>
+        </summary>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>{{ _('Rate name') }}</th>
+                    <th>{{ _('Hourly') }}</th>
+                    <th>{{ _('Monthly') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, rate in period.rates.items() | sort %}
+                <tr>
+                    <td class="mono">{{ name }}</td>
+                    <td class="mono">{{ rate.hourly }} {{ country.currency }}</td>
+                    <td class="mono">{% if rate.monthly_gross %}{{ rate.monthly_gross }}{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if period.source_urls %}
+        <p class="muted" style="padding: 0 var(--space-5) var(--space-4);">
+            <strong>{{ _('Sources') }}:</strong>
+            {% for url in period.source_urls %}
+            <a href="{{ url }}" target="_blank" rel="noopener" class="mono">{{ url }}</a>{% if not loop.last %} · {% endif %}
+            {% endfor %}
+        </p>
+        {% endif %}
+    </details>
+    {% endfor %}
+</section>
+
+<style>
+.period-block { border-top: 1px solid var(--c-border); }
+.period-block:first-child { border-top: 0; }
+.period-block > summary {
+    cursor: pointer;
+    padding: var(--space-3) var(--space-5);
+    user-select: none;
+}
+.period-block > summary:hover { background: var(--c-bg); }
+.period-block[open] > summary { background: var(--c-bg); }
+</style>
+{% endblock %}

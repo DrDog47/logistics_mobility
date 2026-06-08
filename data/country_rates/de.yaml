@@ -1,0 +1,91 @@
+# Germany — country rate file
+# ============================
+# Statutory minimum wage (Mindestlohn) applies to all sectors. There is no
+# separate national statutory sector minimum for road transport.
+# Some companies fall under collective agreements (KV Güterverkehr) that
+# pay above the Mindestlohn, but these are not universally binding.
+# For PM compliance the statutory minimum is the floor.
+
+country: DE
+country_name_en: Germany
+country_name_pl: Niemcy
+country_name_ru: Германия
+currency: EUR
+
+# Standard German full-time hours: 40h/week × 52/12 = 173.33
+default_hours_per_month: 173.33
+
+official_source:
+  primary_url: https://www.mindestlohnkommission.de/
+  posting_portal: https://www.zoll.de/EN/Businesses/Work/Foreign-domiciled-employers-posting/foreign-domiciled-employers-posting_node.html
+  notes: |
+    Mindestlohn is set by the Mindestlohnkommission (independent body of unions,
+    employers, and government). Adjustments typically announced 6-12 months in
+    advance. No separate sector wage for road transport at federal level.
+
+periods:
+  - valid_from: "2025-01-01"
+    valid_to: "2025-12-31"
+    rates:
+      statutory_minimum:
+        hourly: 12.82
+        description_en: Statutory minimum wage (Mindestlohn)
+        description_pl: Ustawowa płaca minimalna (Mindestlohn)
+      driver_default:
+        hourly: 12.82
+        description_en: Driver rate — equals statutory minimum (no federal sector floor)
+        description_pl: Stawka kierowcy — równa minimum ustawowemu
+    source_documents:
+      - url: https://www.gesetze-im-internet.de/milog/
+        type: legislation
+        title: "Mindestlohngesetz (MiLoG) §1 Abs. 2"
+    verified:
+      at: "2025-01-15"
+      by: "system-seed"
+      notes: Confirmed via BMAS bulletin and multiple corroborating sources.
+
+  - valid_from: "2026-01-01"
+    valid_to: "2026-12-31"
+    rates:
+      statutory_minimum:
+        hourly: 13.90
+        description_en: Statutory minimum wage (Mindestlohn) — 2026
+        description_pl: Ustawowa płaca minimalna (Mindestlohn) — 2026
+      driver_default:
+        hourly: 13.90
+        description_en: Driver rate — equals statutory minimum
+        description_pl: Stawka kierowcy — równa minimum ustawowemu
+    source_documents:
+      - url: https://www.mindestlohnkommission.de/
+        type: official
+        title: "Mindestlohnkommission decision 2024-06 (two-step increase 2026/2027)"
+      - url: https://payroll.org/news-resources/news/news-detail/2026/01/01/germany-s-minimum-wage-increases-have-implications-for-mini-jobs
+        type: industry
+        title: "BMAS confirmation via APA payroll bulletin"
+    verified:
+      at: "2025-12-20"
+      by: "system-seed"
+      notes: |
+        Increase from €12.82 → €13.90 confirmed by BMAS (Federal Ministry of
+        Labour and Social Affairs) and Mindestlohnkommission. Effective
+        1 Jan 2026. Next step €14.60 from 1 Jan 2027 already decided.
+
+  - valid_from: "2027-01-01"
+    valid_to: null
+    rates:
+      statutory_minimum:
+        hourly: 14.60
+        description_en: Statutory minimum wage (Mindestlohn) — 2027 (announced)
+        description_pl: Ustawowa płaca minimalna (Mindestlohn) — 2027 (zapowiedziana)
+      driver_default:
+        hourly: 14.60
+        description_en: Driver rate — equals statutory minimum
+        description_pl: Stawka kierowcy — równa minimum ustawowemu
+    source_documents:
+      - url: https://www.mindestlohnkommission.de/
+        type: official
+        title: "Mindestlohnkommission — step 2 of 2024-06 decision"
+    verified:
+      at: "2025-12-20"
+      by: "system-seed"
+      notes: Announced rate; re-verify closer to 2027-01-01 in case of revision.

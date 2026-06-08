@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Rate lookup') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Rate lookup') }}</h1>
+    <p class="muted">{{ _('Find what rate would apply for a country + rate name + date.') }}</p>
+</header>
+
+<section class="panel">
+    <form method="get" class="form-grid">
+        <div class="field">
+            <label for="country">{{ _('Country') }}</label>
+            <select name="country" id="country" class="input">
+                <option value="">— {{ _('select') }} —</option>
+                {% for c in countries %}
+                <option value="{{ c.country }}" {% if c.country == query.country %}selected{% endif %}>
+                    {{ c.country }} — {{ c.country_name_en }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="field">
+            <label for="rate">{{ _('Rate name') }}</label>
+            <input type="text" name="rate" id="rate" class="input input--mono"
+                   value="{{ query.rate }}"
+                   placeholder="e.g. driver_default, statutory_minimum">
+        </div>
+
+        <div class="field">
+            <label for="date">{{ _('Date') }}</label>
+            <input type="date" name="date" id="date" class="input" value="{{ query.date }}">
+        </div>
+
+        <div class="form-grid__actions">
+            <button type="submit" class="btn btn--primary">{{ _('Look up') }}</button>
+        </div>
+    </form>
+</section>
+
+{% if error %}
+<div class="flash flash--error">{{ error }}</div>
+{% endif %}
+
+{% if result %}
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Result') }}</h2>
+    </header>
+    <dl class="kv">
+        <dt>{{ _('Country') }}</dt>
+        <dd>{{ result.country.country_name_en }} ({{ result.country.country }})</dd>
+        <dt>{{ _('Rate name') }}</dt>
+        <dd class="mono">{{ result.rate.name }}</dd>
+        <dt>{{ _('Hourly') }}</dt>
+        <dd class="mono"><strong>{{ result.rate.hourly }} {{ result.country.currency }}</strong></dd>
+        {% if result.rate.monthly_gross %}
+        <dt>{{ _('Monthly gross') }}</dt>
+        <dd class="mono">{{ result.rate.monthly_gross }} {{ result.country.currency }}</dd>
+        {% endif %}
+        <dt>{{ _('Period') }}</dt>
+        <dd class="mono">{{ result.period.valid_from }} → {{ result.period.valid_to or _('open') }}</dd>
+        <dt>{{ _('Last verified') }}</dt>
+        <dd class="mono">{{ result.period.verified_at }} ({{ result.period.verified_by }})</dd>
+        {% if result.period.source_urls %}
+        <dt>{{ _('Sources') }}</dt>
+        <dd>
+            {% for url in result.period.source_urls %}
+            <a href="{{ url }}" target="_blank" rel="noopener" class="mono">{{ url }}</a><br>
+            {% endfor %}
+        </dd>
+        {% endif %}
+    </dl>
+</section>
+{% endif %}
+{% endblock %}

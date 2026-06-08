@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Payroll') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Payroll periods') }}</h1>
+    {% if current_user.is_admin or current_user.is_accountant %}
+    <a class="btn btn--primary" href="{{ url_for('payroll.create_period') }}">+ {{ _('New period') }}</a>
+    {% endif %}
+</header>
+
+<section class="panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{ _('Period') }}</th>
+                <th>{{ _('Driver') }}</th>
+                <th>{{ _('Status') }}</th>
+                <th>{{ _('EUR/PLN') }}</th>
+                <th>{{ _('Days abroad') }}</th>
+                <th>{{ _('Gross') }}</th>
+                <th>{{ _('Net') }}</th>
+                <th>{{ _('Sanitariaty') }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in periods %}
+            <tr>
+                <td class="mono"><a href="{{ url_for('payroll.show_period', period_id=p.id) }}">{{ p.period_label }}</a></td>
+                <td><a href="{{ url_for('drivers.show_driver', driver_id=p.driver_id) }}">{{ p.driver.full_name }}</a></td>
+                <td><span class="pill pill--{{ p.status.value }}">{{ p.status.value }}</span></td>
+                <td class="mono">{{ p.eur_pln_rate }}</td>
+                <td class="mono">
+                    {% if p.days_abroad_override is not none %}
+                        <strong>{{ p.days_abroad_override }}</strong>
+                        <span class="muted">(auto: {{ p.days_abroad_auto }})</span>
+                    {% else %}
+                        {{ p.days_abroad_auto or 0 }}
+                    {% endif %}
+                </td>
+                <td class="mono">{% if p.total_gross_pln is not none %}{{ "%.2f"|format(p.total_gross_pln) }}{% else %}—{% endif %}</td>
+                <td class="mono"><strong>{% if p.total_net_pln is not none %}{{ "%.2f"|format(p.total_net_pln) }}{% else %}—{% endif %}</strong></td>
+                <td class="mono">{% if p.sanitariaty_pln is not none and p.sanitariaty_pln > 0 %}{{ "%.2f"|format(p.sanitariaty_pln) }}{% else %}—{% endif %}</td>
+                <td class="row-actions"><a href="{{ url_for('payroll.show_period', period_id=p.id) }}">{{ _('View') }}</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="9" class="empty">{{ _('No payroll periods yet') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

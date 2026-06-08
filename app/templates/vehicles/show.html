@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ vehicle.plate }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <div>
+        <h1>{{ vehicle.plate }}</h1>
+        <p class="muted">
+            <span class="pill pill--{{ vehicle.vehicle_type.value }}">{{ vehicle.vehicle_type.value }}</span>
+            {% if vehicle.make or vehicle.model %} · {{ vehicle.make }} {{ vehicle.model }}{% endif %}
+            {% if vehicle.year %} · {{ vehicle.year }}{% endif %}
+        </p>
+    </div>
+    {% if current_user.is_admin or current_user.is_fleet_manager %}
+    <a class="btn btn--ghost" href="{{ url_for('vehicles.edit_vehicle', vehicle_id=vehicle.id) }}">{{ _('Edit') }}</a>
+    {% endif %}
+</header>
+
+<section class="panel">
+    <dl class="kv">
+        <dt>VIN</dt><dd class="mono">{{ vehicle.vin or '—' }}</dd>
+        <dt>{{ _('Purchase date') }}</dt><dd>{{ vehicle.purchase_date or '—' }}</dd>
+        <dt>{{ _('Status') }}</dt>
+        <dd>{% if vehicle.is_active %}<span class="pill">{{ _('Active') }}</span>
+            {% else %}<span class="pill pill--inactive">{{ _('Inactive') }}</span>{% endif %}</dd>
+    </dl>
+</section>
+{% endblock %}

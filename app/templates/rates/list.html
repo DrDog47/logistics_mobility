@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Country rates') }} · {{ _('Mobility Payroll') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <div>
+        <h1>{{ _('Country rates') }}</h1>
+        <p class="muted">
+            {{ _('Loaded from YAML files in data/country_rates/. Update via git PR.') }}
+        </p>
+    </div>
+    <a class="btn btn--ghost" href="{{ url_for('rates.lookup') }}">
+        🔍 {{ _('Quick lookup') }}
+    </a>
+</header>
+
+{% if stale %}
+<div class="flash flash--warning">
+    <strong>{{ _('Stale verifications:') }}</strong>
+    {{ _('%(count)d countries have not been re-verified in 90+ days', count=stale|length) }}.
+    {{ _('Run') }} <code class="mono">flask rates verify</code> {{ _('to list them') }}.
+</div>
+{% endif %}
+
+<section class="panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{ _('Code') }}</th>
+                <th>{{ _('Country') }}</th>
+                <th>{{ _('Currency') }}</th>
+                <th>{{ _('Periods') }}</th>
+                <th>{{ _('Current rates') }}</th>
+                <th>{{ _('Last verified') }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                <td class="mono">{{ row.country.country }}</td>
+                <td>
+                    <a href="{{ url_for('rates.show_country', country_code=row.country.country) }}">
+                        {{ row.country.country_name_en }}
+                    </a>
+                    {% if current_locale == 'pl' and row.country.country_name_pl %}
+                        <span class="muted">/ {{ row.country.country_name_pl }}</span>
+                    {% elif current_locale == 'ru' and row.country.country_name_ru %}
+                        <span class="muted">/ {{ row.country.country_name_ru }}</span>
+                    {% endif %}
+                </td>
+                <td class="mono">{{ row.country.currency }}</td>
+                <td>{{ row.country.periods | length }}</td>
+                <td>
+                    {% if row.current_period %}
+                        <span class="pill">{{ row.current_period.rates | length }}</span>
+                    {% else %}
+                        <span class="pill pill--inactive">{{ _('no active period') }}</span>
+                    {% endif %}
+                </td>
+                <td class="mono">
+                    {% if row.latest_verification %}
+                        {{ row.latest_verification }}
+                        {% if row.days_since_verification > 90 %}
+                            <span class="pill pill--inactive">+{{ row.days_since_verification }}d</span>
+                        {% endif %}
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+                <td class="row-actions">
+                    <a href="{{ url_for('rates.show_country', country_code=row.country.country) }}">
+                        {{ _('View') }}
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

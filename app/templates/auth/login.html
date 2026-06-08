@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Sign in') }} · {{ _('Mobility Payroll') }}{% endblock %}
+
+{% block content %}
+<div class="auth-screen">
+    <div class="auth-card">
+        <header class="auth-card__head">
+            <span class="brand__mark brand__mark--lg">MP</span>
+            <h1>{{ _('Mobility Payroll') }}</h1>
+            <p class="muted">{{ _('Driver payroll & EU Mobility Package compliance') }}</p>
+        </header>
+
+        <form method="post" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="field">
+                {{ form.login.label }}
+                {{ form.login(class="input") }}
+                {% for err in form.login.errors %}<div class="field__err">{{ err }}</div>{% endfor %}
+            </div>
+
+            <div class="field">
+                {{ form.password.label }}
+                {{ form.password(class="input") }}
+                {% for err in form.password.errors %}<div class="field__err">{{ err }}</div>{% endfor %}
+            </div>
+
+            <label class="check">
+                {{ form.remember_me() }}
+                <span>{{ form.remember_me.label.text }}</span>
+            </label>
+
+            {{ form.submit(class="btn btn--primary btn--block") }}
+        </form>
+
+        <div class="auth-card__lang">
+            {% for code in config['LANGUAGES'] %}
+            <a href="?lang={{ code }}"
+               class="lang-switcher__opt {% if current_locale == code %}is-active{% endif %}">
+                {{ code | upper }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+# France — country rate file
+# ==========================
+# Two layers apply to drivers:
+#   1. SMIC (statutory minimum) — floor for ALL workers
+#   2. CCN Transports Routiers (IDCC 16, brochure 3085) — sectoral collective
+#      agreement with coefficient-based rates. Mandatory for the sector
+#      (extended by ministerial order, applies to all transport companies).
+#
+# The conventional rate (CCN coefficient) is always ≥ SMIC; when SMIC rises
+# above a low CCN coefficient, SMIC takes precedence for that level.
+
+country: FR
+country_name_en: France
+country_name_pl: Francja
+country_name_ru: Франция
+currency: EUR
+
+# French legal full-time: 35h/week × 52/12 = 151.67
+default_hours_per_month: 151.67
+
+official_source:
+  primary_url: https://travail-emploi.gouv.fr/
+  posting_portal: https://www.sipsi.travail.gouv.fr/
+  ccn_text: https://www.legifrance.gouv.fr/conv_coll/id/KALICONT000005635624/
+  notes: |
+    SMIC is revalorized 1 Jan annually (sometimes additional mid-year if
+    inflation > 2%). CCN 3085 coefficients are negotiated annually under NAO
+    (Négociations Annuelles Obligatoires); extension by arrêté ministériel
+    makes them mandatory for all sector employers.
+
+periods:
+  - valid_from: "2025-01-01"
+    valid_to: "2025-12-31"
+    rates:
+      statutory_minimum:
+        hourly: 11.88
+        description_en: SMIC horaire brut (2025)
+        description_pl: SMIC stawka godzinowa brutto (2025)
+      driver_coef_138m:
+        hourly: 12.14
+        description_en: CCN 3085 coefficient 138M (PL — permis C, normal qualified)
+        description_pl: CCN 3085 współczynnik 138M (PL — prawo jazdy C)
+      driver_coef_150m:
+        hourly: 12.43
+        description_en: CCN 3085 coefficient 150M (SPL — permis C+E, highly qualified)
+        description_pl: CCN 3085 współczynnik 150M (SPL — prawo jazdy C+E)
+    source_documents:
+      - url: https://www.legifrance.gouv.fr/conv_coll/id/KALITEXT000048893519/
+        type: legislation
+        title: "Avenant CCN 3085 — Accord du 11 octobre 2023 (étendu 19 déc 2023)"
+    verified:
+      at: "2025-02-10"
+      by: "system-seed"
+
+  - valid_from: "2026-01-01"
+    valid_to: null
+    rates:
+      statutory_minimum:
+        hourly: 12.02
+        description_en: SMIC horaire brut (2026) — +1.18% revalorization
+        description_pl: SMIC stawka godzinowa brutto (2026) — +1.18%
+      driver_coef_110m_120m:
+        hourly: 12.09
+        description_en: CCN 3085 entry-level coefficients 110M-120M
+        description_pl: CCN 3085 współczynniki początkowe 110M-120M
+      driver_coef_138m:
+        hourly: 12.25
+        description_en: CCN 3085 coefficient 138M (PL)
+        description_pl: CCN 3085 współczynnik 138M (PL)
+      driver_coef_150m:
+        hourly: 12.43
+        description_en: CCN 3085 coefficient 150M (SPL)
+        description_pl: CCN 3085 współczynnik 150M (SPL)
+      driver_coef_150m_15y:
+        hourly: 13.42
+        description_en: CCN 3085 150M after 15 years seniority
+        description_pl: CCN 3085 150M po 15 latach stażu
+    source_documents:
+      - url: https://franceroutes.fr/salaire-routier-bareme-2026/
+        type: industry
+        title: "France Routes n°522 (mars-avril 2026) — Grille salariale"
+      - url: https://www.legifrance.gouv.fr/conv_coll/id/KALICONT000005635624/
+        type: legislation
+        title: "Avenant CCN 3085 — 9 avril 2025"
+    verified:
+      at: "2026-04-04"
+      by: "system-seed"
+      notes: |
+        SMIC effective 1 Jan 2026 (Decree). CCN coefficients per avenant
+        9 April 2025 and France Routes magazine n°522. The narrow gap between
+        SMIC (12.02) and coef 110M (12.09) is intentional — sector negotiation
+        compression vs. SMIC indexation.

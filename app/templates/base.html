@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="{{ current_locale }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ _('Mobility Payroll') }}{% endblock %}</title>
+
+    <link rel="preconnect" href="https://rsms.me/">
+    <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+    <meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <nav class="topbar">
+        <div class="topbar__inner">
+            <a class="brand" href="{{ url_for('main.dashboard') }}">
+                <span class="brand__mark">MP</span>
+                <span class="brand__name">{{ _('Mobility Payroll') }}</span>
+            </a>
+
+            <ul class="nav-links">
+                <li><a href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a></li>
+                <li><a href="{{ url_for('drivers.list_drivers') }}">{{ _('Drivers') }}</a></li>
+                <li><a href="{{ url_for('vehicles.list_vehicles') }}">{{ _('Vehicles') }}</a></li>
+                <li><a href="{{ url_for('trips.list_trips') }}">{{ _('Trips') }}</a></li>
+                <li><a href="{{ url_for('payroll.list_periods') }}">{{ _('Payroll') }}</a></li>
+                <li><a href="{{ url_for('rates.list_countries') }}">{{ _('Rates') }}</a></li>
+            </ul>
+
+            <div class="topbar__right">
+                <div class="lang-switcher" role="group" aria-label="{{ _('Language') }}">
+                    {% for code in config['LANGUAGES'] %}
+                    <a href="?lang={{ code }}"
+                       class="lang-switcher__opt {% if current_locale == code %}is-active{% endif %}">
+                        {{ code | upper }}
+                    </a>
+                    {% endfor %}
+                </div>
+                <span class="user-chip" title="{{ current_user.role.value }}">
+                    {{ current_user.full_name }}
+                </span>
+                <a class="btn btn--ghost" href="{{ url_for('auth.logout') }}">{{ _('Sign out') }}</a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}
+                    <div class="flash flash--{{ category }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <small>{{ _('Mobility Payroll') }} · v0.1.0 · Phase 0 (skeleton)</small>
+    </footer>
+</body>
+</html>

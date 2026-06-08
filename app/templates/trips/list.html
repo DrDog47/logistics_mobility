@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Trips') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Trips') }}</h1>
+    <a class="btn btn--primary" href="{{ url_for('trips.create_trip') }}">+ {{ _('New trip') }}</a>
+</header>
+
+<section class="panel">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>{{ _('Driver') }}</th>
+                <th>{{ _('Vehicle') }}</th>
+                <th>{{ _('Dates') }}</th>
+                <th>{{ _('Hours') }}</th>
+                <th>{{ _('Posted h.') }}</th>
+                <th>{{ _('Status') }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in trips %}
+            <tr>
+                <td class="mono"><a href="{{ url_for('trips.show_trip', trip_id=t.id) }}">{{ t.trip_number }}</a></td>
+                <td><a href="{{ url_for('drivers.show_driver', driver_id=t.driver_id) }}">{{ t.driver.full_name }}</a></td>
+                <td class="mono">{{ t.vehicle.plate if t.vehicle else '—' }}</td>
+                <td>{{ t.start_date }} → {{ t.end_date }}</td>
+                <td class="mono">{{ "%.2f"|format(t.total_hours) }}</td>
+                <td class="mono">{{ "%.2f"|format(t.posting_hours) }}</td>
+                <td><span class="pill pill--{{ t.status.value }}">{{ t.status.value }}</span></td>
+                <td class="row-actions"><a href="{{ url_for('trips.show_trip', trip_id=t.id) }}">{{ _('View') }}</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8" class="empty">{{ _('No trips yet') }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>
+{% endblock %}

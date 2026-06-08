@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Add segment') }} · {{ trip.trip_number }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Add segment to trip') }} {{ trip.trip_number }}</h1>
+</header>
+
+<section class="panel">
+    <div style="padding: var(--space-4) var(--space-5); background: var(--c-accent-bg); font-size: 12px; line-height: 1.6;">
+        <strong>{{ _('Segment type cheat-sheet:') }}</strong><br>
+        <span class="mono">transit</span> — {{ _('passing through, no load/unload. NOT posted.') }}<br>
+        <span class="mono">bilateral</span> — {{ _('PL ↔ X. NOT posted.') }}<br>
+        <span class="mono">cabotage</span> — {{ _('within ONE foreign country (e.g. DE → DE). POSTED.') }}<br>
+        <span class="mono">cross_trade</span> — {{ _('between TWO foreign countries (e.g. DE → FR). POSTED.') }}
+    </div>
+
+    <form method="post" class="form-grid">
+        {{ form.hidden_tag() }}
+        <div class="field">{{ form.sequence.label }}{{ form.sequence(class="input") }}</div>
+        <div class="field">{{ form.work_date.label }}{{ form.work_date(class="input") }}
+            {% for e in form.work_date.errors %}<div class="field__err">{{ e }}</div>{% endfor %}</div>
+        <div class="field">{{ form.country.label }}{{ form.country(class="input input--mono") }}
+            {% for e in form.country.errors %}<div class="field__err">{{ e }}</div>{% endfor %}</div>
+        <div class="field">{{ form.segment_type.label }}{{ form.segment_type(class="input") }}</div>
+        <div class="field">{{ form.work_hours.label }}{{ form.work_hours(class="input input--mono") }}
+            {% for e in form.work_hours.errors %}<div class="field__err">{{ e }}</div>{% endfor %}</div>
+        <div class="field">{{ form.rate_name.label }}{{ form.rate_name(class="input input--mono") }}
+            {% for e in form.rate_name.errors %}<div class="field__err">{{ e }}</div>{% endfor %}</div>
+        <div class="field field--span-2">{{ form.notes.label }}{{ form.notes(class="input") }}</div>
+        <div class="form-grid__actions">
+            <a class="btn btn--ghost" href="{{ url_for('trips.show_trip', trip_id=trip.id) }}">{{ _('Cancel') }}</a>
+            {{ form.submit(class="btn btn--primary") }}
+        </div>
+    </form>
+</section>
+{% endblock %}

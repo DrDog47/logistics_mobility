@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ _('New trip') }}{% endblock %}
+
+{% block content %}
+<header class="page-head"><h1>{{ _('New trip') }}</h1></header>
+
+<section class="panel">
+    <form method="post" class="form-grid">
+        {{ form.hidden_tag() }}
+        <div class="field">{{ form.driver_id.label }}{{ form.driver_id(class="input") }}
+            {% for e in form.driver_id.errors %}<div class="field__err">{{ e }}</div>{% endfor %}</div>
+        <div class="field">{{ form.vehicle_id.label }}{{ form.vehicle_id(class="input") }}</div>
+        <div class="field">{{ form.trip_number.label }}{{ form.trip_number(class="input input--mono") }}
+            {% for e in form.trip_number.errors %}<div class="field__err">{{ e }}</div>{% endfor %}</div>
+        <div class="field"></div>
+        <div class="field">{{ form.start_date.label }}{{ form.start_date(class="input") }}</div>
+        <div class="field">{{ form.end_date.label }}{{ form.end_date(class="input") }}</div>
+        <div class="field field--span-2">{{ form.notes.label }}{{ form.notes(class="input", rows=3) }}</div>
+        <div class="form-grid__actions">
+            <a class="btn btn--ghost" href="{{ url_for('trips.list_trips') }}">{{ _('Cancel') }}</a>
+            {{ form.submit(class="btn btn--primary") }}
+        </div>
+    </form>
+</section>
+{% endblock %}

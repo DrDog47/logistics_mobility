@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ driver.full_name }} · {{ _('Mobility Payroll') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <div>
+        <h1>{{ driver.full_name }}</h1>
+        <p class="muted">
+            <span class="pill">{{ driver.nationality }}</span>
+            {{ _('Hired') }}: {{ driver.hire_date }}
+            {% if not driver.is_active %}
+                · <span class="pill pill--inactive">{{ _('Inactive') }}</span>
+            {% endif %}
+        </p>
+    </div>
+    {% if current_user.is_admin or current_user.is_fleet_manager %}
+    <a class="btn btn--ghost" href="{{ url_for('drivers.edit_driver', driver_id=driver.id) }}">
+        {{ _('Edit') }}
+    </a>
+    {% endif %}
+</header>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Identification') }}</h2>
+    </header>
+    <dl class="kv">
+        <dt>PESEL</dt><dd class="mono">{{ driver.pesel or '—' }}</dd>
+        <dt>{{ _('Passport') }}</dt><dd class="mono">{{ driver.passport_number or '—' }}</dd>
+        <dt>{{ _('Tachograph card') }}</dt><dd class="mono">{{ driver.tachograph_card_number or '—' }}</dd>
+    </dl>
+</section>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Contracts') }}</h2>
+        {% if current_user.is_admin or current_user.is_accountant %}
+        <a class="btn btn--ghost" href="{{ url_for('drivers.add_contract', driver_id=driver.id) }}">
+            + {{ _('Add contract') }}
+        </a>
+        {% endif %}
+    </header>
+    {% if driver.contracts %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>{{ _('Type') }}</th>
+                <th>{{ _('Period') }}</th>
+                <th>{{ _('Base salary (PLN)') }}</th>
+                <th>{{ _('Hours norm') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in driver.contracts %}
+            <tr>
+                <td>
+                    <span class="pill pill--{{ c.contract_type.value }}">
+                        {{ c.contract_type.value.replace('_', ' ') }}
+                    </span>
+                </td>
+                <td>{{ c.start_date }} → {{ c.end_date or _('open') }}</td>
+                <td class="mono">{{ "%.2f"|format(c.base_salary_pln) }}</td>
+                <td>{{ c.hours_norm }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">{{ _('No contracts yet') }}</p>
+    {% endif %}
+</section>
+{% endblock %}
