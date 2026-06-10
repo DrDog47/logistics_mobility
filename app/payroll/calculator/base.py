@@ -11,7 +11,8 @@ from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
 
-from app.drivers.models import ContractType, DriverContract
+from app.drivers.contracts import ContractTerms, contract_terms, current_contract_doc
+from app.drivers.models import ContractType
 
 # Phase 2: added virtual diet, sanitariaty, ZUS/PIT bases, NBP integration.
 CALCULATOR_VERSION = "phase2-2026-06"
@@ -38,16 +39,17 @@ def month_bounds(year: int, month: int) -> tuple[date, date]:
     return first, last
 
 
-def active_contract(driver, on_date: date) -> DriverContract:
-    """Return the contract active on `on_date` for the driver."""
-    for contract in driver.contracts:
-        if contract.start_date <= on_date and (
-            contract.end_date is None or contract.end_date >= on_date
-        ):
-            return contract
-    raise CalculatorError(
-        f"No active contract for {driver.full_name} on {on_date.isoformat()}"
-    )
+def active_contract(driver, on_date: date) -> ContractTerms:
+    """Return the contract terms active on `on_date` for the driver.
+
+    A contract is an ``employment`` document; terms come from its ``extra``.
+    """
+    doc = current_contract_doc(driver, on_date)
+    if doc is None:
+        raise CalculatorError(
+            f"No active contract for {driver.full_name} on {on_date.isoformat()}"
+        )
+    return contract_terms(doc)
 
 
 def calculate(period) -> None:

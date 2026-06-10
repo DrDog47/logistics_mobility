@@ -1,0 +1,52 @@
+<table id="vehicles-table" class="table">
+    <thead>
+        <tr>
+            <th>{{ _('Plate') }}</th>
+            <th>{{ _('Type') }}</th>
+            <th>{{ _('Brand / Model') }}</th>
+            <th>VIN</th>
+            <th>{{ _('Organisation') }}</th>
+            <th>{{ _('Documents') }}</th>
+            <th>{{ _('Expiring documents') }}</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for v in vehicles %}
+        <tr>
+            <td class="mono"><a href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.uuid) }}">{{ v.registration_plate }}</a></td>
+            <td><span class="pill pill--{{ v.vehicle_type }}">{{ v.vehicle_type }}</span></td>
+            <td>{{ v.brand }} {{ v.model }}</td>
+            <td class="mono">{{ v.vin }}</td>
+            <td>
+                {% if v.organisation %}
+                    <a href="{{ url_for('organisations.show_organisation', org_id=v.organisation.uuid) }}">{{ v.organisation.name }}</a>
+                {% else %}
+                    <span class="muted">—</span>
+                {% endif %}
+            </td>
+            {% set dc = doc_counts.get(v.uuid, {'total': 0, 'expiring': 0}) %}
+            <td>{{ dc.total }}</td>
+            <td>
+                {% if dc.expiring %}
+                    <span class="badge badge--urgent">{{ dc.expiring }}</span>
+                {% else %}
+                    <span class="muted">0</span>
+                {% endif %}
+            </td>
+            <td class="row-actions">
+                <a class="btn btn--ghost btn--sm" href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.uuid) }}">{{ _('View') }}</a>
+                {% if current_user.is_admin or current_user.is_fleet_manager %}
+                <form method="post" action="{{ url_for('vehicles.delete_vehicle', vehicle_id=v.uuid) }}"
+                      onsubmit="return confirm('{{ _('Delete vehicle %(plate)s?', plate=v.registration_plate) }}')" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--ghost btn--sm btn--danger">{{ _('Delete') }}</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="empty">{{ _('No vehicles registered yet') }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

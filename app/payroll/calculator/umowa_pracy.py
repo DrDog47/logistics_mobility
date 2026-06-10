@@ -48,7 +48,7 @@ from app.tax.polish_params import PolishParams, get_polish_params
 from app.trips.models import Trip, TripSegment, TripStatus
 
 if TYPE_CHECKING:
-    from app.drivers.models import DriverContract
+    from app.drivers.contracts import ContractTerms
 
 TWO = Decimal("0.01")
 HUNDRED = Decimal("100")
@@ -59,7 +59,7 @@ def _r(value: Decimal) -> Decimal:
     return value.quantize(TWO, rounding=ROUND_HALF_UP)
 
 
-def calculate(period: PayrollPeriod, contract: "DriverContract") -> None:
+def calculate(period: PayrollPeriod, contract: "ContractTerms") -> None:
     """Compute & persist payroll lines + period totals.
 
     Caller is responsible for db.session.commit().

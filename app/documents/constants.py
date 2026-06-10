@@ -37,6 +37,8 @@ DRIVER_DOCUMENT_TYPES: list[tuple[str, str]] = [
     ("psychological", "Psychological exam (badania psychologiczne)"),
     ("tacho_card", "Tachograph card (karta kierowcy)"),
     ("adr", "ADR certificate"),
+    ("a1", "A1 social security certificate"),
+    ("posting", "Posting declaration (oświadczenie o delegowaniu)"),
     ("pesel", "PESEL notification"),
     ("oswiadczenie", "Work permit (oświadczenie)"),
     ("employment", "Employment contract"),
@@ -44,9 +46,10 @@ DRIVER_DOCUMENT_TYPES: list[tuple[str, str]] = [
 ]
 
 VEHICLE_DOCUMENT_TYPES: list[tuple[str, str]] = [
-    ("tech_passport", "Tech passport"),
+    ("tech_passport", "Vehicle registration certificate"),
+    ("insurance", "OC insurance"),
     ("inspection", "Technical inspection"),
-    ("insurance", "Insurance"),
+    ("green_card", "Green Card"),
 ]
 
 DRIVER_DOCUMENT_VALUES = frozenset(v for v, _ in DRIVER_DOCUMENT_TYPES)
@@ -65,7 +68,7 @@ BASE_DOCUMENT_TYPES: dict[str, list[tuple[str, str]]] = {
 GENERIC_THRESHOLDS = (120, 60)        # passport, visa, residence, license, ...
 INSURANCE_THRESHOLDS = (60, 30, 15)   # vehicle insurance — tighter scale (PRD §6)
 
-# Types whose expiry is never tracked: identity/permanent cards and the
-# open-ended employment contract. (employment_annex IS tracked, but only when
-# it carries an end_date — the status helper returns "no expiry" otherwise.)
-UNTRACKED_TYPES = frozenset({"employment", "pesel", "tech_passport"})
+# Types whose expiry is never tracked: identity/permanent cards. Contracts
+# (employment / employment_annex) ARE tracked, but only when they carry an
+# end_date — the status helper returns "no expiry" for open-ended ones.
+UNTRACKED_TYPES = frozenset({"pesel", "tech_passport"})

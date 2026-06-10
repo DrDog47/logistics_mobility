@@ -1,19 +1,25 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Add contract') }} · {{ driver.full_name }}{% endblock %}
+{% block title %}{{ (_('Edit contract') if contract else _('Add contract')) }} · {{ driver.full_name }}{% endblock %}
 
 {% block content %}
 <header class="page-head">
-    <h1>{{ _('Add contract') }}: {{ driver.full_name }}</h1>
+    <h1>{{ (_('Edit contract') if contract else _('Add contract')) }}: {{ driver.full_name }}</h1>
 </header>
 
 <section class="panel">
     <form method="post" class="form-grid">
         {{ form.hidden_tag() }}
 
-        <div class="field field--span-2">
+        <div class="field">
             {{ form.contract_type.label }}
             {{ form.contract_type(class="input") }}
             {% for e in form.contract_type.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+
+        <div class="field">
+            {{ form.number.label }}
+            {{ form.number(class="input input--mono") }}
+            {% for e in form.number.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
 
         <div class="field">

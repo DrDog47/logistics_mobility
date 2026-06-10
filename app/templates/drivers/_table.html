@@ -3,8 +3,10 @@
         <tr>
             <th>{{ _('Name') }}</th>
             <th>{{ _('Nationality') }}</th>
-            <th>{{ _('Tachograph card') }}</th>
+            <th>{{ _('Organisation') }}</th>
             <th>{{ _('Contract') }}</th>
+            <th>{{ _('Documents') }}</th>
+            <th>{{ _('Expiring documents') }}</th>
             <th>{{ _('Hired') }}</th>
             <th></th>
         </tr>
@@ -18,23 +20,44 @@
                 </a>
             </td>
             <td><span class="pill">{{ d.nationality }}</span></td>
-            <td class="mono">{{ d.tachograph_card_number or '—' }}</td>
             <td>
-                {% if d.current_contract %}
-                    <span class="pill pill--{{ d.current_contract.contract_type.value }}">
-                        {{ d.current_contract.contract_type.value.replace('_', ' ') }}
-                    </span>
+                {% if d.organisation %}
+                    <a href="{{ url_for('organisations.show_organisation', org_id=d.organisation.uuid) }}">{{ d.organisation.name }}</a>
                 {% else %}
                     <span class="muted">—</span>
                 {% endif %}
             </td>
+            <td>
+                {% set ctype = (d.current_contract.extra or {}).get('contract_type') if d.current_contract else None %}
+                {% if ctype %}
+                    <span class="pill pill--{{ ctype }}">{{ ctype.replace('_', ' ') }}</span>
+                {% else %}
+                    <span class="muted">—</span>
+                {% endif %}
+            </td>
+            {% set dc = doc_counts.get(d.uuid, {'total': 0, 'expiring': 0}) %}
+            <td>{{ dc.total }}</td>
+            <td>
+                {% if dc.expiring %}
+                    <span class="badge badge--urgent">{{ dc.expiring }}</span>
+                {% else %}
+                    <span class="muted">0</span>
+                {% endif %}
+            </td>
             <td>{{ d.hire_date }}</td>
             <td class="row-actions">
-                <a href="{{ url_for('drivers.show_driver', driver_id=d.id) }}">{{ _('View') }}</a>
+                <a class="btn btn--ghost btn--sm" href="{{ url_for('drivers.show_driver', driver_id=d.id) }}">{{ _('View') }}</a>
+                {% if current_user.is_admin or current_user.is_fleet_manager %}
+                <form method="post" action="{{ url_for('drivers.delete_driver', driver_id=d.id) }}"
+                      onsubmit="return confirm('{{ _('Delete driver %(name)s?', name=d.full_name) }}')" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--ghost btn--sm btn--danger">{{ _('Delete') }}</button>
+                </form>
+                {% endif %}
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="empty">{{ _('No drivers found') }}</td></tr>
+        <tr><td colspan="8" class="empty">{{ _('No drivers found') }}</td></tr>
         {% endfor %}
     </tbody>
 </table>

@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from app.documents.constants import UNTRACKED_TYPES
+from app.documents.constants import ENTITY_VEHICLE, UNTRACKED_TYPES
 
 # Status levels (also used as CSS badge modifiers: badge--<level>).
 OK = "ok"
@@ -32,11 +32,14 @@ def document_status(
     document_type: str,
     end_date: date | None,
     today: date | None = None,
+    entity_type: str | None = None,
 ) -> DocStatus:
     """Classify a document by how close its ``end_date`` is.
 
-    Generic documents use the 120/60-day scale; vehicle insurance uses the
-    tighter 60/30/15-day scale. Untracked types and documents without an
+    Generic (driver) documents use the 120/60-day scale. **All vehicle
+    documents** use the tighter 60/30/15-day scale (PRD vehicle §11.2) — pass
+    ``entity_type="vehicle"`` to opt in; driver insurance, if any, also stays on
+    the tight scale by type. Untracked types and documents without an
     ``end_date`` get a neutral status.
     """
     today = today or date.today()
@@ -50,7 +53,7 @@ def document_status(
     if days < 0:
         return DocStatus(EXPIRED, days, f"Expired {-days}d ago")
 
-    if document_type == "insurance":
+    if document_type == "insurance" or entity_type == ENTITY_VEHICLE:
         if days <= 15:
             return DocStatus(CRITICAL, days, f"{days}d left")
         if days <= 30:

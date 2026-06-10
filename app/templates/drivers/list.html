@@ -11,6 +11,72 @@
     {% endif %}
 </header>
 
+<section class="kpis">
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Total drivers') }}</span>
+        <span class="kpi__value">{{ stats.total }}</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Active contracts') }}</span>
+        <span class="kpi__value">{{ stats.with_contract }}</span>
+        {% if stats.without_contract %}
+        <span class="kpi__hint">{{ _('%(n)d without contract', n=stats.without_contract) }}</span>
+        {% endif %}
+    </div>
+    {% if stats.expiring_docs %}
+    <details class="kpi kpi--dropdown">
+        <summary class="kpi__summary">
+            <span class="kpi__label">{{ _('Docs expiring') }}</span>
+            <span class="kpi__value kpi__value--warn">{{ stats.expiring_docs }}</span>
+            <span class="kpi__hint">{{ _('expiring soon or expired') }} ▾</span>
+        </summary>
+        <div class="kpi__menu">
+            {% for d in stats.expiring_list %}
+            <a class="kpi__menu-item" href="{{ url_for('drivers.show_driver', driver_id=d.driver_id) }}">
+                <span class="kpi__menu-main">
+                    <span class="kpi__menu-name">{{ d.driver_name }}</span>
+                    <span class="kpi__menu-sub">{{ d.document_type }}{% if d.end_date %} · {{ d.end_date }}{% endif %}</span>
+                </span>
+                <span class="badge badge--{{ d.level }}">{{ d.label }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </details>
+    {% else %}
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Docs expiring') }}</span>
+        <span class="kpi__value">0</span>
+        <span class="kpi__hint">{{ _('expiring soon or expired') }}</span>
+    </div>
+    {% endif %}
+
+    {% if stats.on_leave %}
+    <details class="kpi kpi--dropdown">
+        <summary class="kpi__summary">
+            <span class="kpi__label">{{ _('On leave now') }}</span>
+            <span class="kpi__value">{{ stats.on_leave }}</span>
+            <span class="kpi__hint">{{ _('see who') }} ▾</span>
+        </summary>
+        <div class="kpi__menu">
+            {% for d in stats.on_leave_list %}
+            <a class="kpi__menu-item" href="{{ url_for('drivers.show_driver', driver_id=d.driver_id) }}">
+                <span class="kpi__menu-main">
+                    <span class="kpi__menu-name">{{ d.driver_name }}</span>
+                    <span class="kpi__menu-sub">{{ d.kind }}</span>
+                </span>
+                <span class="kpi__menu-sub">{{ _('until') }} {{ d.end_date }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </details>
+    {% else %}
+    <div class="kpi">
+        <span class="kpi__label">{{ _('On leave now') }}</span>
+        <span class="kpi__value">0</span>
+    </div>
+    {% endif %}
+</section>
+
 <section class="panel">
     <div class="panel__toolbar">
         <input
@@ -29,4 +95,13 @@
 
     {% include "drivers/_table.html" %}
 </section>
+
+{% if deleted_drivers %}
+<header class="page-head page-head--sub">
+    <h2>{{ _('Deleted drivers') }} <span class="muted">({{ deleted_drivers | length }})</span></h2>
+</header>
+<section class="panel">
+    {% include "drivers/_deleted_table.html" %}
+</section>
+{% endif %}
 {% endblock %}

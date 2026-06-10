@@ -1,0 +1,53 @@
+{# Archive of soft-deleted drivers. Same shape as the active list minus the
+   document/expiry tracking, with a Restore action. Caller sets: deleted_drivers. #}
+<table class="table">
+    <thead>
+        <tr>
+            <th>{{ _('Name') }}</th>
+            <th>{{ _('Nationality') }}</th>
+            <th>{{ _('Organisation') }}</th>
+            <th>{{ _('Contract') }}</th>
+            <th>{{ _('Hired') }}</th>
+            <th>{{ _('Deleted') }}</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for d in deleted_drivers %}
+        <tr>
+            <td>
+                <a href="{{ url_for('drivers.show_driver', driver_id=d.id) }}">{{ d.full_name }}</a>
+            </td>
+            <td><span class="pill">{{ d.nationality }}</span></td>
+            <td>
+                {% if d.organisation %}
+                    <a href="{{ url_for('organisations.show_organisation', org_id=d.organisation.uuid) }}">{{ d.organisation.name }}</a>
+                {% else %}
+                    <span class="muted">—</span>
+                {% endif %}
+            </td>
+            <td>
+                {% set ctype = (d.current_contract.extra or {}).get('contract_type') if d.current_contract else None %}
+                {% if ctype %}
+                    <span class="pill pill--{{ ctype }}">{{ ctype.replace('_', ' ') }}</span>
+                {% else %}
+                    <span class="muted">—</span>
+                {% endif %}
+            </td>
+            <td>{{ d.hire_date or '—' }}</td>
+            <td class="mono">{{ d.deleted_at.strftime('%Y-%m-%d') if d.deleted_at else '—' }}</td>
+            <td class="row-actions">
+                {% if current_user.is_admin or current_user.is_fleet_manager %}
+                <form method="post" action="{{ url_for('drivers.restore_driver', driver_id=d.id) }}"
+                      onsubmit="return confirm('{{ _('Restore driver %(name)s?', name=d.full_name) }}')" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--ghost btn--sm">{{ _('Restore') }}</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty">{{ _('No deleted drivers') }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -1,0 +1,68 @@
+# Driver document requirements ruleset — PRD §11–12.
+#
+# Loaded into an immutable registry at startup (a malformed file refuses boot,
+# like the country-rate / tax YAML). Edit via PR so each change to the norm is
+# code-reviewed and git-versioned (§12.2).
+#
+# mode:
+#   required      — must always be present; absence => "missing".
+#   conditional   — required when `applies_if` matches the driver. v1 carries no
+#                   route/citizenship predicate data yet, so by product decision
+#                   these are treated as required-for-all (§12.4).
+#   present_only  — never counted as "missing"; tracked only if the driver
+#                   actually has one (track-if-present, e.g. ADR — §12.4).
+# thresholds:   [soon, urgent] days before end_date, most-distant first (§6/§12.3).
+# satisfied_by: other document types that also satisfy this requirement
+#               (e.g. an EU passport satisfies the passport requirement).
+
+version: 1
+rules:
+  - type: license
+    mode: required
+    label: Driving licence
+    thresholds: [120, 60]
+  - type: code95
+    mode: required
+    label: Driver qualification (code 95)
+    thresholds: [120, 60]
+  - type: medical
+    mode: required
+    label: Medical exam
+    thresholds: [120, 60]
+  - type: psychological
+    mode: required
+    label: Psychological exam
+    thresholds: [120, 60]
+  - type: tacho_card
+    mode: required
+    label: Tachograph card
+    thresholds: [120, 60]
+  - type: passport
+    mode: required
+    label: Passport
+    satisfied_by: [passport_eu]
+    thresholds: [120, 60]
+  - type: employment
+    mode: required
+    label: Employment contract
+    thresholds: [120, 60]
+  - type: visa
+    mode: required
+    label: Work visa
+    thresholds: [120, 60]
+  - type: residence
+    mode: required
+    label: Residence card
+    thresholds: [120, 60]
+  - type: a1
+    mode: required
+    label: A1 certificate
+    thresholds: [120, 60]
+  - type: posting
+    mode: required
+    label: Posting declaration
+    thresholds: [120, 60]
+  - type: adr
+    mode: present_only
+    label: ADR certificate
+    thresholds: [120, 60]

@@ -1,0 +1,34 @@
+# Vehicle document requirements ruleset — PRD vehicle §11–12.
+#
+# Loaded into an immutable registry at startup (a malformed file refuses boot,
+# like the driver ruleset and the country-rate / tax YAML). Edit via PR so each
+# change to the norm is code-reviewed and git-versioned.
+#
+# mode:
+#   required      — must always be present; absence => "missing".
+#   present_only  — never counted as "missing"; tracked only if the vehicle
+#                   actually has one (track-if-present, e.g. Green Card — §12.4).
+# thresholds:   [soon, urgent, critical] days before end_date, most-distant first.
+#               All tracked vehicle documents share the single OC schedule
+#               60/30/15/0 (§11.2) — diverges from drivers on purpose.
+# untracked:    true for permanent/identity cards with no expiry (registration).
+
+version: 1
+rules:
+  - type: tech_passport
+    mode: required
+    label: Vehicle registration certificate
+    untracked: true            # permanent — only presence is checked (§11.2)
+    thresholds: [60, 30, 15]
+  - type: insurance
+    mode: required
+    label: OC insurance
+    thresholds: [60, 30, 15]   # single vehicle schedule (§11.2)
+  - type: inspection
+    mode: required
+    label: Technical inspection
+    thresholds: [60, 30, 15]   # single vehicle schedule (§11.2)
+  - type: green_card
+    mode: present_only
+    label: Green Card
+    thresholds: [60, 30, 15]   # single vehicle schedule (§11.2)

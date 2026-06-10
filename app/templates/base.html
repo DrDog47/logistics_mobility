@@ -10,61 +10,106 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
     <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
+    <script src="{{ url_for('static', filename='js/dropzone.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/documents.js') }}" defer></script>
     <meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
 </head>
+{% macro nav_icon(name) %}
+<svg class="sidenav__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+{%- if name == 'main' -%}<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>
+{%- elif name == 'drivers' -%}<circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-5.5 6.5-5.5s6.5 1.9 6.5 5.5"/><path d="M17 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18.5 14.6c1.8.7 3 2.2 3 4.4"/>
+{%- elif name == 'vehicles' -%}<rect x="1.5" y="6.5" width="12" height="9" rx="1"/><path d="M13.5 9.5H17l3.5 3.5v2.5h-7z"/><circle cx="6" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/>
+{%- elif name == 'organisations' -%}<path d="M3 21V8l7-4 7 4v13"/><path d="M3 21h18"/><path d="M9 21v-4h2v4"/><path d="M7 11h.01M11 11h.01M7 14h.01M11 14h.01"/>
+{%- elif name == 'inbox' -%}<path d="M3 13h4l2 3h6l2-3h4"/><path d="M5 4h14l2 9v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-6z"/>
+{%- elif name == 'types' -%}<path d="M3 12l8-8 9 9-8 8z"/><circle cx="7.5" cy="7.5" r="1.4"/>
+{%- elif name == 'rates' -%}<ellipse cx="12" cy="6" rx="7.5" ry="3"/><path d="M4.5 6v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3V6"/><path d="M4.5 12v6c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-6"/>
+{%- elif name == 'vacations' -%}<rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18"/><path d="M8 2.5v4M16 2.5v4"/>
+{%- elif name == 'settings' -%}<circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1"/>
+{%- endif -%}
+</svg>
+{% endmacro %}
+{% set ep = request.endpoint or '' %}
 <body>
-    {% if current_user.is_authenticated %}
-    <nav class="topbar">
-        <div class="topbar__inner">
+    <div class="layout {% if not current_user.is_authenticated %}layout--bare{% endif %}">
+        {% if current_user.is_authenticated %}
+        <aside class="sidebar" data-sidebar>
             <a class="brand" href="{{ url_for('main.dashboard') }}">
                 <span class="brand__mark">MP</span>
                 <span class="brand__name">{{ _('Mobility Payroll') }}</span>
             </a>
+            <nav class="sidenav">
+                <a class="sidenav__link {% if ep.startswith('main.') %}is-active{% endif %}"
+                   href="{{ url_for('main.dashboard') }}">{{ nav_icon('main') }}<span>{{ _('Main') }}</span></a>
+                <a class="sidenav__link {% if ep.startswith('drivers.') %}is-active{% endif %}"
+                   href="{{ url_for('drivers.list_drivers') }}">{{ nav_icon('drivers') }}<span>{{ _('Drivers') }}</span></a>
+                <a class="sidenav__link {% if ep.startswith('vehicles.') %}is-active{% endif %}"
+                   href="{{ url_for('vehicles.list_vehicles') }}">{{ nav_icon('vehicles') }}<span>{{ _('Vehicles') }}</span></a>
+                <a class="sidenav__link {% if ep.startswith('organisations.') %}is-active{% endif %}"
+                   href="{{ url_for('organisations.list_organisations') }}">{{ nav_icon('organisations') }}<span>{{ _('Organisations') }}</span></a>
+                <a class="sidenav__link {% if ep.startswith('vacations.') %}is-active{% endif %}"
+                   href="{{ url_for('vacations.calendar') }}">{{ nav_icon('vacations') }}<span>{{ _('Vacations') }}</span></a>
+                {% if current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
+                <a class="sidenav__link sidenav__link--accent {% if 'inbox' in ep %}is-active{% endif %}"
+                   href="{{ url_for('documents.inbox') }}">{{ nav_icon('inbox') }}<span>{{ _('Inbox') }}</span></a>
+                {% endif %}
+                <div class="sidenav__sep"></div>
+                <a class="sidenav__link {% if 'document_type' in ep %}is-active{% endif %}"
+                   href="{{ url_for('documents.list_document_types') }}">{{ nav_icon('types') }}<span>{{ _('Document types') }}</span></a>
+                <a class="sidenav__link {% if ep.startswith('rates.') %}is-active{% endif %}"
+                   href="{{ url_for('rates.list_countries') }}">{{ nav_icon('rates') }}<span>{{ _('Rates') }}</span></a>
+                {% if current_user.is_admin %}
+                <a class="sidenav__link {% if ep.startswith('settings.') %}is-active{% endif %}"
+                   href="{{ url_for('settings.index') }}">{{ nav_icon('settings') }}<span>{{ _('Settings') }}</span></a>
+                {% endif %}
+            </nav>
+        </aside>
+        {% endif %}
 
-            <ul class="nav-links">
-                <li><a href="{{ url_for('main.dashboard') }}">{{ _('Dashboard') }}</a></li>
-                <li><a href="{{ url_for('organisations.list_organisations') }}">{{ _('Organisations') }}</a></li>
-                <li><a href="{{ url_for('drivers.list_drivers') }}">{{ _('Drivers') }}</a></li>
-                <li><a href="{{ url_for('vehicles.list_vehicles') }}">{{ _('Vehicles') }}</a></li>
-                <li><a href="{{ url_for('trips.list_trips') }}">{{ _('Trips') }}</a></li>
-                <li><a href="{{ url_for('documents.list_document_types') }}">{{ _('Document types') }}</a></li>
-                <li><a href="{{ url_for('rates.list_countries') }}">{{ _('Rates') }}</a></li>
-            </ul>
-
-            <div class="topbar__right">
-                <div class="lang-switcher" role="group" aria-label="{{ _('Language') }}">
-                    {% for code in config['LANGUAGES'] %}
-                    <a href="?lang={{ code }}"
-                       class="lang-switcher__opt {% if current_locale == code %}is-active{% endif %}">
-                        {{ code | upper }}
-                    </a>
-                    {% endfor %}
+        <div class="layout__main">
+            {% if current_user.is_authenticated %}
+            <header class="topbar-slim">
+                <button type="button" class="sidebar-toggle" data-sidebar-toggle aria-label="{{ _('Menu') }}">≡</button>
+                <div class="topbar-slim__right">
+                    <div class="lang-switcher" role="group" aria-label="{{ _('Language') }}">
+                        {% for code in config['LANGUAGES'] %}
+                        <a href="?lang={{ code }}"
+                           class="lang-switcher__opt {% if current_locale == code %}is-active{% endif %}">{{ code | upper }}</a>
+                        {% endfor %}
+                    </div>
+                    <span class="user-chip" title="{{ current_user.role.value }}">{{ current_user.full_name }}</span>
+                    <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">{{ _('Sign out') }}</a>
                 </div>
-                <span class="user-chip" title="{{ current_user.role.value }}">
-                    {{ current_user.full_name }}
-                </span>
-                <a class="btn btn--ghost" href="{{ url_for('auth.logout') }}">{{ _('Sign out') }}</a>
-            </div>
-        </div>
-    </nav>
-    {% endif %}
-
-    <main class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flashes">
-                    {% for category, message in messages %}
-                    <div class="flash flash--{{ category }}" role="alert">{{ message }}</div>
-                    {% endfor %}
-                </div>
+            </header>
             {% endif %}
-        {% endwith %}
 
-        {% block content %}{% endblock %}
-    </main>
+            <main class="container">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="flashes">
+                            {% for category, message in messages %}
+                            <div class="flash flash--{{ category }}" role="alert">{{ message }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
 
-    <footer class="footer">
-        <small>{{ _('Mobility Payroll') }} · v0.1.0 · Phase 0 (skeleton)</small>
-    </footer>
+                {% block content %}{% endblock %}
+            </main>
+
+            <footer class="footer">
+                <small>{{ _('Mobility Payroll') }} · v0.1.0 · Phase 0 (skeleton)</small>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+      document.addEventListener('click', function (e) {
+        if (e.target.closest('[data-sidebar-toggle]')) {
+          var s = document.querySelector('[data-sidebar]');
+          if (s) s.classList.toggle('is-open');
+        }
+      });
+    </script>
 </body>
 </html>

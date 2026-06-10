@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "documents/_preview.html" import preview_tile %}
 {% block title %}
 {%- if document -%}{{ _('Edit document') }}{%- else -%}{{ _('New document') }}{%- endif -%}
 {% endblock %}
@@ -34,6 +35,17 @@
             {{ form.insurance_company.label }}{{ form.insurance_company(class="input") }}
             {% for e in form.insurance_company.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
+        {% set links = document.scan_links if document else [] %}
+        {% if links %}
+        <div class="field field--span-2">
+            <span class="field__label">{{ _('Current files') }}</span>
+            <div class="doc-thumbs">
+                {% for link in links %}
+                {{ preview_tile(link, link, link.split('/')|last) }}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
         <div class="field field--span-2">
             {{ form.file_links.label }}{{ form.file_links(class="input", rows="3") }}
             {% for e in form.file_links.errors %}<div class="field__err">{{ e }}</div>{% endfor %}

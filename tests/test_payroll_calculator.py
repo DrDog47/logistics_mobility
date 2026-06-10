@@ -17,7 +17,9 @@ from decimal import Decimal
 
 import pytest
 
-from app.drivers.models import ContractType, Driver, DriverContract
+from app.documents.constants import ENTITY_DRIVER
+from app.documents.models import DocumentType, DriverDocument
+from app.drivers.models import ContractType, Driver
 from app.extensions import db
 from app.payroll.calculator import calculate
 from app.payroll.calculator.base import CalculatorError
@@ -50,17 +52,35 @@ def _make_driver(base_salary_pln: Decimal, hire_date: date = date(2024, 1, 1)) -
     db.session.add(driver)
     db.session.flush()
 
-    contract = DriverContract(
-        driver_id=driver.id,
-        contract_type=ContractType.UMOWA_O_PRACE,
-        start_date=hire_date,
-        end_date=None,
-        base_salary_pln=base_salary_pln,
-        hours_norm=168,
-    )
-    db.session.add(contract)
-    db.session.flush()
+    _add_employment_contract(driver, base_salary_pln, hire_date)
     return driver
+
+
+def _add_employment_contract(
+    driver: Driver, base_salary_pln: Decimal, start: date, end: date | None = None
+) -> DriverDocument:
+    """A contract is now an ``employment`` document with terms in ``extra``."""
+    if not db.session.execute(
+        db.select(DocumentType).where(
+            DocumentType.type == "employment", DocumentType.entity_type == ENTITY_DRIVER
+        )
+    ).scalar_one_or_none():
+        db.session.add(DocumentType(type="employment", entity_type=ENTITY_DRIVER, label="Employment"))
+        db.session.flush()
+    doc = DriverDocument(
+        driver_uuid=driver.uuid,
+        document_type="employment",
+        start_date=start,
+        end_date=end,
+        extra={
+            "contract_type": ContractType.UMOWA_O_PRACE.value,
+            "base_salary_pln": str(base_salary_pln),
+            "hours_norm": 168,
+        },
+    )
+    db.session.add(doc)
+    db.session.flush()
+    return doc
 
 
 def _make_truck() -> Vehicle:

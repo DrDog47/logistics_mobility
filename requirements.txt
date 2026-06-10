@@ -33,6 +33,16 @@ PyYAML==6.0.2
 # Environment & config
 python-dotenv==1.0.1
 
+# Document recognition (PRD §8.7) — Claude adapter (DOCUMENT_RECOGNIZER=claude).
+# Imported lazily, so the default "fake" recognizer works without using it.
+anthropic==0.107.1
+
+# Google Calendar sync for driver vacations (optional). Imported lazily in
+# app/vacations/google.py — manual-only mode works without these installed.
+google-api-python-client==2.149.0
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+
 # Dev/Test
 pytest==8.3.3
 pytest-flask==1.3.0

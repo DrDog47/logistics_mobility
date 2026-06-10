@@ -1,0 +1,44 @@
+{# Archive of soft-deleted vehicles. Same shape as the active list minus the
+   document/expiry tracking, with a Restore action. Caller sets: deleted_vehicles. #}
+<table class="table">
+    <thead>
+        <tr>
+            <th>{{ _('Plate') }}</th>
+            <th>{{ _('Type') }}</th>
+            <th>{{ _('Brand / Model') }}</th>
+            <th>VIN</th>
+            <th>{{ _('Organisation') }}</th>
+            <th>{{ _('Deleted') }}</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for v in deleted_vehicles %}
+        <tr>
+            <td class="mono"><a href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.uuid) }}">{{ v.registration_plate }}</a></td>
+            <td><span class="pill pill--{{ v.vehicle_type }}">{{ v.vehicle_type }}</span></td>
+            <td>{{ v.brand }} {{ v.model }}</td>
+            <td class="mono">{{ v.vin }}</td>
+            <td>
+                {% if v.organisation %}
+                    <a href="{{ url_for('organisations.show_organisation', org_id=v.organisation.uuid) }}">{{ v.organisation.name }}</a>
+                {% else %}
+                    <span class="muted">—</span>
+                {% endif %}
+            </td>
+            <td class="mono">{{ v.deleted_at.strftime('%Y-%m-%d') if v.deleted_at else '—' }}</td>
+            <td class="row-actions">
+                {% if current_user.is_admin or current_user.is_fleet_manager %}
+                <form method="post" action="{{ url_for('vehicles.restore_vehicle', vehicle_id=v.uuid) }}"
+                      onsubmit="return confirm('{{ _('Restore vehicle %(plate)s?', plate=v.registration_plate) }}')" class="inline-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn--ghost btn--sm">{{ _('Restore') }}</button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="empty">{{ _('No deleted vehicles') }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>

@@ -1,49 +1,150 @@
 {% extends "base.html" %}
-{% block title %}{{ vehicle.registration_plate }}{% endblock %}
+{% block title %}{{ vehicle.registration_plate }} · {{ _('Mobility Payroll') }}{% endblock %}
 
 {% block content %}
-<header class="page-head">
-    <div>
-        <h1>{{ vehicle.registration_plate }}</h1>
-        <p class="muted">
-            <span class="pill pill--{{ vehicle.vehicle_type }}">{{ vehicle.vehicle_type }}</span>
-            · {{ vehicle.brand }} {{ vehicle.model }}
-        </p>
-    </div>
-    {% if current_user.is_admin or current_user.is_fleet_manager %}
-    <a class="btn btn--ghost" href="{{ url_for('vehicles.edit_vehicle', vehicle_id=vehicle.uuid) }}">{{ _('Edit') }}</a>
-    {% endif %}
-</header>
+{% set can_edit = current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
 
-<section class="panel">
-    <dl class="kv">
-        <dt>{{ _('Organisation') }}</dt>
-        <dd>
-            {% if vehicle.organisation %}
-            <a href="{{ url_for('organisations.show_organisation', org_id=vehicle.organisation.uuid) }}">{{ vehicle.organisation.name }}</a>
-            {% else %}—{% endif %}
-        </dd>
-        <dt>VIN</dt><dd class="mono">{{ vehicle.vin }}</dd>
-        <dt>{{ _('Acquisition date') }}</dt><dd>{{ vehicle.acquisition_date or '—' }}</dd>
-        <dt>{{ _('Manufacture date') }}</dt><dd>{{ vehicle.manufacture_date or '—' }}</dd>
-        <dt>{{ _('Status') }}</dt>
-        <dd>{% if vehicle.is_active %}<span class="pill">{{ _('Active') }}</span>
-            {% else %}<span class="pill pill--inactive">{{ _('Inactive') }}</span>{% endif %}</dd>
-    </dl>
-</section>
+<div class="crumbs">
+    <a class="btn btn--ghost btn--sm" href="{{ url_for('vehicles.list_vehicles') }}">← {{ _('Back to vehicles') }}</a>
+    <span class="crumbs__path">{{ _('Vehicles') }}<span class="crumbs__sep">›</span>{{ _('Vehicle card') }}</span>
+</div>
 
-<section class="panel">
-    <header class="panel__head">
-        <h2>{{ _('Documents') }}</h2>
-        {% if current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
-        <a class="btn btn--ghost" href="{{ url_for('documents.new_vehicle_document', vehicle_id=vehicle.uuid) }}">
-            + {{ _('Add document') }}
-        </a>
+{# ---------------- TOP: profile + required-documents summary ---------------- #}
+<section class="panel top-card">
+
+    <div class="profile-section">
+        <div class="profile-head">
+            <span class="avatar">{{ vehicle.brand[0] | upper }}</span>
+            <div>
+                <div class="driver-card__name">{{ vehicle.registration_plate }}</div>
+                <span class="pill pill--{{ vehicle.vehicle_type }}">{{ vehicle.vehicle_type }}</span>
+                {% if vehicle.registration_country %}<span class="country-tag">{{ vehicle.registration_country }}</span>{% endif %}
+                {% if not vehicle.is_active %}<span class="country-tag">{{ _('inactive') }}</span>{% endif %}
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-section-title">{{ _('Identification') }}</div>
+            <div class="info-grid">
+                <div class="field-row"><span class="label">VIN</span><span class="value mono">{{ vehicle.vin }}</span></div>
+                <div class="field-row"><span class="label">{{ _('Plate') }}</span><span class="value mono">{{ vehicle.registration_plate }}</span></div>
+                <div class="field-row"><span class="label">{{ _('Type') }}</span><span class="value">{{ vehicle.vehicle_type }}</span></div>
+                <div class="field-row"><span class="label">{{ _('Country of registration') }}</span><span class="value {% if not vehicle.registration_country %}empty{% endif %}">{{ vehicle.registration_country or '—' }}</span></div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-section-title">{{ _('Vehicle') }}</div>
+            <div class="info-grid">
+                <div class="field-row"><span class="label">{{ _('Brand') }}</span><span class="value">{{ vehicle.brand }}</span></div>
+                <div class="field-row"><span class="label">{{ _('Model') }}</span><span class="value">{{ vehicle.model }}</span></div>
+                <div class="field-row"><span class="label">{{ _('Registration date') }}</span><span class="value mono {% if not vehicle.registration_date %}empty{% endif %}">{{ vehicle.registration_date.strftime('%Y-%m-%d') if vehicle.registration_date else '—' }}</span></div>
+                <div class="field-row"><span class="label">{{ _('Manufacture date') }}</span><span class="value mono {% if not vehicle.manufacture_date %}empty{% endif %}">{{ vehicle.manufacture_date or '—' }}</span></div>
+                <div class="field-row"><span class="label">{{ _('Acquisition date') }}</span><span class="value mono {% if not vehicle.acquisition_date %}empty{% endif %}">{{ vehicle.acquisition_date or '—' }}</span></div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="info-section-title">{{ _('Legal entity') }}</div>
+            <div class="info-grid">
+                <div class="field-row"><span class="label">{{ _('Organisation') }}</span><span class="value">{% if vehicle.organisation %}<a href="{{ url_for('organisations.show_organisation', org_id=vehicle.organisation.uuid) }}">{{ vehicle.organisation.name }}</a>{% else %}—{% endif %}</span></div>
+                <div class="field-row"><span class="label">{{ _('Status') }}</span><span class="value">{% if vehicle.is_active %}{{ _('Active') }}{% else %}{{ _('Inactive') }}{% endif %}</span></div>
+            </div>
+        </div>
+
+        {% if current_user.is_admin or current_user.is_fleet_manager %}
+        <a class="btn edit-btn" href="{{ url_for('vehicles.edit_vehicle', vehicle_id=vehicle.uuid) }}">✎ {{ _('Edit profile') }}</a>
         {% endif %}
-    </header>
-    {% set documents = vehicle.documents %}
-    {% set doc_kind = 'vehicle' %}
-    {% set can_edit = current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
-    {% include "documents/_doc_table.html" %}
+    </div>
+
+    <div class="divider-v"></div>
+
+    {# Required-documents tracking summary (vehicle PRD §11–12). No vacations for vehicles. #}
+    {% set req = vehicle_completeness(vehicle) %}
+    <div class="contract-section reqs-section">
+        <div class="contract-section-head">
+            <span class="section-label">{{ _('Required documents') }}</span>
+            {% if req.is_complete %}
+            <span class="reqs-overall reqs-overall--ok">{{ _('Complete') }}</span>
+            {% elif req.missing %}
+            <span class="reqs-overall reqs-overall--missing">{{ _('%(n)d missing', n=req.missing|length) }}</span>
+            {% else %}
+            <span class="reqs-overall reqs-overall--expiring">{{ _('%(n)d expiring', n=req.expiring|length) }}</span>
+            {% endif %}
+        </div>
+
+        {% if req.missing %}
+        <div class="reqs-block">
+            <div class="reqs-block__head reqs-block__head--missing">{{ _('Missing') }} <span class="reqs-count">{{ req.missing|length }}</span></div>
+            <div class="reqs-tags">
+                {% for rule in req.missing %}
+                <span class="req-tag req-tag--missing">{{ rule.display_label }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if req.expiring %}
+        <div class="reqs-block">
+            <div class="reqs-block__head reqs-block__head--expiring">{{ _('Expiring soon') }} <span class="reqs-count">{{ req.expiring|length }}</span></div>
+            {% for it in req.expiring %}
+            <a class="req-row" href="{{ url_for('documents.edit_vehicle_document', doc_id=it.document.uuid) }}">
+                <span class="badge badge--{{ it.level }}">{{ it.days_left }}d</span>
+                <span class="req-row__type">{{ it.rule.display_label }}</span>
+                <span class="req-row__date mono">{{ it.document.end_date }}</span>
+            </a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if req.ok %}
+        <div class="reqs-block">
+            <div class="reqs-block__head reqs-block__head--ok">{{ _('In order') }} <span class="reqs-count">{{ req.ok|length }}</span></div>
+            <div class="reqs-tags">
+                {% for it in req.ok %}
+                <span class="req-tag req-tag--ok" title="{{ it.document.end_date or _('no expiry') }}">{{ it.rule.display_label }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
 </section>
+
+{# ---------------- BOTTOM: documents (full width). No vacations for vehicles. ---------------- #}
+<div class="driver-bottom">
+
+    <section class="panel panel--pad">
+        <div class="panel-header">
+            <div class="panel-title">{{ _('Documents') }}</div>
+            <div class="panel-actions">
+                {% if can_edit %}
+                <a class="btn btn--primary btn--sm" href="{{ url_for('documents.new_vehicle_document', vehicle_id=vehicle.uuid) }}">+ {{ _('Add document') }}</a>
+                {% endif %}
+            </div>
+        </div>
+        <div id="vehicle-documents">
+            {% with documents = vehicle.active_documents, doc_kind = 'vehicle' %}
+            {% include "documents/_doc_table.html" %}
+            {% endwith %}
+        </div>
+
+        {% if can_edit %}
+        {% set dz_id = 'dz-vehicle-' ~ vehicle.uuid %}
+        {% set dz_title = _('Drag documents here') %}
+        {% set dz_vehicle = vehicle %}
+        {% include "documents/_dropzone.html" %}
+        {% endif %}
+
+        {% if vehicle.archived_documents %}
+        <div class="panel-header panel-header--mt">
+            <div class="panel-title">{{ _('Archived documents') }}</div>
+        </div>
+        <div id="vehicle-archived-documents">
+            {% with documents = vehicle.archived_documents, doc_kind = 'vehicle' %}
+            {% include "documents/_doc_table.html" %}
+            {% endwith %}
+        </div>
+        {% endif %}
+    </section>
+</div>
 {% endblock %}

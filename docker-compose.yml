@@ -33,8 +33,14 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-mobility}:${POSTGRES_PASSWORD:-mobility}@db:5432/${POSTGRES_DB:-mobility}
       DEFAULT_LANGUAGE: pl
       NBP_API_BASE: https://api.nbp.pl/api
+      # Document storage tree inside the container (PRD §8.6). The host folder is
+      # mounted below; uploaded packages land in <DOCUMENTS_DIR>/_Inbox/.
+      DOCUMENTS_DIR: /app/documents
     volumes:
       - ./data:/app/data:ro
+      # External documents folder, mounted writable so the app can save uploads
+      # and reorganise files. Override the host path with DOCUMENTS_HOST_DIR.
+      - ${DOCUMENTS_HOST_DIR:-./documents}:/app/documents
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
       interval: 30s

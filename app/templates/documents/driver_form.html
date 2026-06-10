@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "documents/_preview.html" import preview_tile %}
 {% block title %}
 {%- if document -%}{{ _('Edit document') }}{%- else -%}{{ _('New document') }}{%- endif -%}
 {% endblock %}
@@ -34,6 +35,20 @@
             {{ form.categories.label }}{{ form.categories(class="input input--mono") }}
             {% for e in form.categories.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
+        {% set files = (document.files | rejectattr('is_deleted') | list) if document else [] %}
+        {% if files %}
+        <div class="field field--span-2">
+            <span class="field__label">{{ _('Current files') }}</span>
+            <div class="doc-thumbs">
+                {% for file in files %}
+                {{ preview_tile(
+                    url_for('documents.download_driver_file', file_id=file.uuid),
+                    url_for('documents.download_driver_file', file_id=file.uuid, dl=1),
+                    file.file_link.split('/')|last) }}
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
         <div class="field field--span-2">
             {{ form.file_links.label }}{{ form.file_links(class="input", rows="3") }}
             {% for e in form.file_links.errors %}<div class="field__err">{{ e }}</div>{% endfor %}

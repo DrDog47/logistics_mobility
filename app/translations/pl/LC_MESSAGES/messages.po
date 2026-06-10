@@ -1,0 +1,1959 @@
+# Polish translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-06-10 13:41+0200\n"
+"PO-Revision-Date: 2026-06-10 13:08+0200\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: pl\n"
+"Language-Team: pl <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.16.0\n"
+
+#: app/auth/forms.py:11
+msgid "Login"
+msgstr ""
+
+#: app/auth/forms.py:16
+msgid "Password"
+msgstr ""
+
+#: app/auth/forms.py:20
+msgid "Remember me"
+msgstr ""
+
+#: app/auth/forms.py:21 app/templates/auth/login.html:2
+msgid "Sign in"
+msgstr ""
+
+#: app/auth/routes.py:73
+msgid "Invalid login or password"
+msgstr ""
+
+#: app/auth/routes.py:77
+msgid "Account is disabled"
+msgstr ""
+
+#: app/auth/routes.py:96
+msgid "You have been logged out"
+msgstr ""
+
+#: app/documents/forms.py:47
+msgid "Document type"
+msgstr ""
+
+#: app/documents/forms.py:48 app/documents/forms.py:78
+#: app/templates/documents/_inbox_entry.html:86
+msgid "Document number"
+msgstr ""
+
+#: app/documents/forms.py:49 app/documents/forms.py:79 app/drivers/forms.py:105
+#: app/templates/documents/_doc_table.html:14
+#: app/templates/vacations/_panel.html:132 app/trips/forms.py:30
+#: app/vacations/forms.py:28
+msgid "Start date"
+msgstr "Data początkowa"
+
+#: app/documents/forms.py:50 app/documents/forms.py:80
+msgid "End date (expiry)"
+msgstr ""
+
+#: app/documents/forms.py:52
+msgid "Scan links (one URL per line)"
+msgstr ""
+
+#: app/documents/forms.py:55 app/documents/forms.py:81
+#: app/documents/forms.py:98 app/drivers/forms.py:88 app/drivers/forms.py:117
+#: app/organisations/forms.py:25 app/templates/vacations/_panel.html:135
+#: app/templates/vacations/_panel.html:148 app/trips/forms.py:33
+#: app/vacations/forms.py:31 app/vacations/forms.py:48 app/vehicles/forms.py:40
+msgid "Save"
+msgstr "Zapisz"
+
+#: app/documents/forms.py:60
+msgid "Categories (licence only)"
+msgstr ""
+
+#: app/documents/forms.py:66
+msgid "Insurance company (insurance only)"
+msgstr ""
+
+#: app/documents/forms.py:75
+msgid "File link / path"
+msgstr ""
+
+#: app/documents/forms.py:77 app/templates/documents/_doc_table.html:12
+#: app/templates/documents/_inbox_entry.html:37
+#: app/templates/payroll/show.html:68 app/templates/trips/show.html:45
+#: app/templates/vacations/_panel.html:131 app/templates/vehicles/list.html:19
+#: app/vacations/forms.py:23 app/vehicles/forms.py:19
+msgid "Type"
+msgstr "Typ"
+
+#: app/documents/forms.py:88 app/templates/documents/types_list.html:18
+msgid "Type code"
+msgstr ""
+
+#: app/documents/forms.py:90
+msgid "Short machine code, e.g. passport, insurance"
+msgstr ""
+
+#: app/documents/forms.py:93 app/templates/documents/types_list.html:20
+msgid "Belongs to"
+msgstr ""
+
+#: app/documents/forms.py:97 app/templates/documents/types_list.html:19
+msgid "Display name"
+msgstr ""
+
+#: app/documents/routes.py:360 app/documents/routes.py:495
+msgid "Document added"
+msgstr ""
+
+#: app/documents/routes.py:378 app/documents/routes.py:513
+msgid "Document updated"
+msgstr ""
+
+#: app/documents/routes.py:394
+msgid "Document and its files deleted"
+msgstr ""
+
+#: app/documents/routes.py:413
+msgid "File updated"
+msgstr ""
+
+#: app/documents/routes.py:425
+msgid "File deleted"
+msgstr ""
+
+#: app/documents/routes.py:525
+msgid "Document deleted"
+msgstr ""
+
+#: app/documents/routes.py:568 app/documents/routes.py:589
+msgid "This type already exists for that entity"
+msgstr ""
+
+#: app/documents/routes.py:577
+msgid "Document type added"
+msgstr ""
+
+#: app/documents/routes.py:595
+msgid "Document type updated"
+msgstr ""
+
+#: app/documents/routes.py:606
+msgid "Document type deleted"
+msgstr ""
+
+#: app/drivers/forms.py:37 app/templates/documents/_inbox_entry.html:54
+msgid "First name"
+msgstr "Imię"
+
+#: app/drivers/forms.py:38 app/templates/documents/_inbox_entry.html:57
+msgid "Last name"
+msgstr "Nazwisko"
+
+#: app/drivers/forms.py:40 app/templates/documents/_inbox_entry.html:68
+#: app/templates/drivers/show.html:37
+msgid "Birth date"
+msgstr "Data urodzenia"
+
+#: app/drivers/forms.py:43 app/templates/documents/_inbox_entry.html:73
+#: app/templates/drivers/_deleted_table.html:7
+#: app/templates/drivers/_table.html:5 app/templates/drivers/show.html:36
+msgid "Nationality"
+msgstr "Obywatelstwo"
+
+#: app/drivers/forms.py:50 app/templates/drivers/_deleted_table.html:8
+#: app/templates/drivers/_table.html:6 app/templates/drivers/show.html:44
+#: app/templates/vehicles/show.html:20 app/vehicles/forms.py:34
+msgid "Organisation"
+msgstr "Organizacja"
+
+#: app/drivers/forms.py:56
+msgid "national ID number"
+msgstr "krajowy numer identyfikacyjny"
+
+#: app/drivers/forms.py:60
+msgid "Latin letters and digits only."
+msgstr "Tylko litery łacińskie i cyfry."
+
+#: app/drivers/forms.py:64
+msgid "PESEL (optional, Polish residents)"
+msgstr "PESEL (opcjonalnie, dla rezydentów Polski)"
+
+#: app/drivers/forms.py:69 app/templates/documents/_inbox_entry.html:64
+msgid "Passport number"
+msgstr "Numer paszportu"
+
+#: app/drivers/forms.py:73
+msgid "Latin letters (series) and digits only, no spaces."
+msgstr "Tylko litery łacińskie (seria) i cyfry, bez spacji."
+
+#: app/drivers/forms.py:78
+msgid "Tachograph card number"
+msgstr "Numer karty kierowcy"
+
+#: app/drivers/forms.py:83 app/templates/drivers/show.html:60
+msgid "Phone"
+msgstr "Telefon"
+
+#: app/drivers/forms.py:84 app/templates/trips/show.html:48
+#: app/templates/trips/show.html:87 app/trips/forms.py:32 app/trips/forms.py:70
+msgid "Notes"
+msgstr "Notatki"
+
+#: app/drivers/forms.py:86 app/templates/drivers/show.html:45
+msgid "Hire date"
+msgstr "Data zatrudnienia"
+
+#: app/drivers/forms.py:96
+msgid "Contract type"
+msgstr "Typ umowy"
+
+#: app/drivers/forms.py:101
+msgid "Contract number (optional)"
+msgstr "Numer umowy (opcjonalnie)"
+
+#: app/drivers/forms.py:106
+msgid "End date (optional)"
+msgstr "Data końcowa (opcjonalnie)"
+
+#: app/drivers/forms.py:108
+msgid "Base salary (PLN, gross)"
+msgstr "Wynagrodzenie podstawowe (PLN, brutto)"
+
+#: app/drivers/forms.py:113
+msgid "Monthly hours norm"
+msgstr "Miesięczna norma godzin"
+
+#: app/drivers/routes.py:257
+#, python-format
+msgid "Driver %(name)s added"
+msgstr "Dodano kierowcę %(name)s"
+
+#: app/drivers/routes.py:298
+msgid "Driver updated"
+msgstr "Zaktualizowano kierowcę"
+
+#: app/drivers/routes.py:309
+#, python-format
+msgid "Driver %(name)s deleted"
+msgstr "Usunięto kierowcę %(name)s"
+
+#: app/drivers/routes.py:321
+#, python-format
+msgid "Driver %(name)s restored"
+msgstr "Przywrócono kierowcę %(name)s"
+
+#: app/drivers/routes.py:356
+msgid "Contract added"
+msgstr "Dodano umowę"
+
+#: app/drivers/routes.py:378
+msgid "Contract updated"
+msgstr "Zaktualizowano umowę"
+
+#: app/drivers/routes.py:390
+msgid "Contract deleted"
+msgstr "Usunięto umowę"
+
+#: app/organisations/forms.py:12
+msgid "Company name"
+msgstr ""
+
+#: app/organisations/forms.py:14
+msgid "National ID (NIP / ИНН / EDRPOU)"
+msgstr ""
+
+#: app/organisations/forms.py:18 app/templates/organisations/list.html:20
+#: app/templates/organisations/show.html:26 app/templates/payroll/show.html:69
+#: app/templates/rates/list.html:30 app/templates/rates/lookup.html:13
+#: app/templates/rates/lookup.html:52 app/templates/trips/show.html:44
+msgid "Country"
+msgstr ""
+
+#: app/organisations/forms.py:23 app/templates/organisations/list.html:21
+#: app/templates/organisations/show.html:27
+msgid "City"
+msgstr ""
+
+#: app/organisations/forms.py:24 app/templates/organisations/show.html:28
+msgid "Address"
+msgstr ""
+
+#: app/organisations/routes.py:52
+#, python-format
+msgid "Organisation %(name)s added"
+msgstr ""
+
+#: app/organisations/routes.py:72
+msgid "Organisation updated"
+msgstr ""
+
+#: app/organisations/routes.py:83
+#, python-format
+msgid "Organisation %(name)s deleted"
+msgstr ""
+
+#: app/payroll/forms.py:21 app/templates/payroll/list.html:17
+#: app/templates/trips/list.html:15 app/trips/forms.py:24
+msgid "Driver"
+msgstr ""
+
+#: app/payroll/forms.py:23
+msgid "Year"
+msgstr ""
+
+#: app/payroll/forms.py:28
+msgid "Month"
+msgstr ""
+
+#: app/payroll/forms.py:40
+msgid "Fetch EUR/PLN from NBP automatically"
+msgstr ""
+
+#: app/payroll/forms.py:44
+msgid "EUR/PLN rate (leave 0 to auto-fetch)"
+msgstr ""
+
+#: app/payroll/forms.py:50
+msgid "Days abroad override (blank = auto from segments)"
+msgstr ""
+
+#: app/payroll/forms.py:53
+msgid "Create and calculate"
+msgstr ""
+
+#: app/payroll/routes.py:61
+#, python-format
+msgid "NBP fetch failed: %(err)s. Enter rate manually."
+msgstr ""
+
+#: app/payroll/routes.py:66
+msgid "EUR/PLN rate must be > 0"
+msgstr ""
+
+#: app/payroll/routes.py:84
+msgid "Period already exists for this driver and month"
+msgstr ""
+
+#: app/payroll/routes.py:93
+#, python-format
+msgid "Calculation failed: %(err)s"
+msgstr ""
+
+#: app/payroll/routes.py:96
+msgid "Payroll calculated"
+msgstr ""
+
+#: app/payroll/routes.py:114
+msgid "Cannot recalculate an approved period"
+msgstr ""
+
+#: app/payroll/routes.py:120
+msgid "Recalculated"
+msgstr ""
+
+#: app/payroll/routes.py:123
+#, python-format
+msgid "Recalculation failed: %(err)s"
+msgstr ""
+
+#: app/payroll/routes.py:132
+msgid "Only calculated periods can be approved"
+msgstr ""
+
+#: app/payroll/routes.py:136
+msgid "Period approved and frozen"
+msgstr ""
+
+#: app/templates/auth/login.html:2 app/templates/auth/login.html:9
+#: app/templates/base.html:6 app/templates/base.html:39
+#: app/templates/base.html:101 app/templates/documents/inbox.html:2
+#: app/templates/drivers/form.html:4 app/templates/drivers/list.html:2
+#: app/templates/drivers/show.html:2 app/templates/main/dashboard.html:2
+#: app/templates/rates/list.html:2 app/templates/settings/index.html:2
+#: app/templates/vacations/calendar.html:2
+msgid "Mobility Payroll"
+msgstr "Mobility Payroll"
+
+#: app/templates/base.html:43
+msgid "Main"
+msgstr "Główna"
+
+#: app/templates/base.html:45 app/templates/drivers/list.html:2
+#: app/templates/drivers/list.html:6 app/templates/drivers/show.html:9
+#: app/templates/main/dashboard.html:32
+#: app/templates/organisations/show.html:33
+msgid "Drivers"
+msgstr "Kierowcy"
+
+#: app/templates/base.html:47 app/templates/main/dashboard.html:36
+#: app/templates/organisations/show.html:45 app/templates/vehicles/list.html:2
+#: app/templates/vehicles/list.html:6
+msgid "Vehicles"
+msgstr "Pojazdy"
+
+#: app/templates/base.html:49 app/templates/organisations/list.html:2
+#: app/templates/organisations/list.html:6
+msgid "Organisations"
+msgstr "Organizacje"
+
+#: app/templates/base.html:51
+msgid "Vacations"
+msgstr "Urlopy"
+
+#: app/templates/base.html:54 app/templates/documents/inbox.html:2
+msgid "Inbox"
+msgstr "Skrzynka odbiorcza"
+
+#: app/templates/base.html:58 app/templates/documents/types_list.html:2
+#: app/templates/documents/types_list.html:6
+msgid "Document types"
+msgstr "Typy dokumentów"
+
+#: app/templates/base.html:60 app/templates/rates/show.html:2
+msgid "Rates"
+msgstr "Stawki"
+
+#: app/templates/base.html:63 app/templates/settings/index.html:2
+#: app/templates/settings/index.html:6 app/templates/vacations/_panel.html:38
+#: app/templates/vacations/calendar.html:53
+msgid "Settings"
+msgstr "Ustawienia"
+
+#: app/templates/base.html:72
+msgid "Menu"
+msgstr "Menu"
+
+#: app/templates/base.html:74
+msgid "Language"
+msgstr "Język"
+
+#: app/templates/base.html:81
+msgid "Sign out"
+msgstr "Wyloguj"
+
+#: app/templates/auth/login.html:10
+msgid "Driver payroll & EU Mobility Package compliance"
+msgstr ""
+
+#: app/templates/documents/_doc_table.html:11
+#: app/templates/payroll/list.html:18 app/templates/settings/index.html:33
+#: app/templates/trips/list.html:20 app/templates/vehicles/show.html:29
+msgid "Status"
+msgstr "Status"
+
+#: app/templates/documents/_doc_table.html:13
+msgid "Number"
+msgstr "Numer"
+
+#: app/templates/documents/_doc_table.html:15
+#: app/templates/vacations/_panel.html:133 app/trips/forms.py:31
+#: app/vacations/forms.py:29
+msgid "End date"
+msgstr "Data końcowa"
+
+#: app/templates/documents/_doc_table.html:29
+msgid "Show/hide files"
+msgstr "Pokaż/ukryj pliki"
+
+#: app/templates/documents/_doc_table.html:42
+#: app/templates/documents/_doc_table.html:69
+#: app/templates/documents/types_list.html:32
+#: app/templates/organisations/show.html:12 app/templates/vehicles/show.html:14
+msgid "Edit"
+msgstr "Edytuj"
+
+#: app/templates/documents/_doc_table.html:44
+msgid "Download"
+msgstr "Pobierz"
+
+#: app/templates/documents/_doc_table.html:48
+msgid "Delete this document and its files?"
+msgstr "Usunąć ten dokument i jego pliki?"
+
+#: app/templates/documents/_doc_table.html:50
+#: app/templates/documents/_doc_table.html:74
+#: app/templates/documents/types_list.html:37
+#: app/templates/drivers/_table.html:54
+#: app/templates/organisations/show.html:17
+#: app/templates/vacations/_panel.html:113
+msgid "Delete"
+msgstr "Usuń"
+
+#: app/templates/documents/_doc_table.html:72
+msgid "Delete this file?"
+msgstr "Usunąć ten plik?"
+
+#: app/templates/documents/_doc_table.html:94
+msgid "No documents yet"
+msgstr "Brak dokumentów"
+
+#: app/templates/documents/_driver_options.html:3
+msgid "— auto (match by data) —"
+msgstr ""
+
+#: app/templates/documents/_dropzone.html:26
+msgid "Drop documents here or click to choose files"
+msgstr "Upuść dokumenty tutaj lub kliknij, aby wybrać pliki"
+
+#: app/templates/documents/_dropzone.html:36
+#: app/templates/drivers/show.html:146
+msgid "Drag documents here"
+msgstr "Przeciągnij dokumenty tutaj"
+
+#: app/templates/documents/_dropzone.html:40
+msgid "PDF, JPG or PNG — a whole package at once"
+msgstr "PDF, JPG lub PNG — cały pakiet naraz"
+
+#: app/templates/documents/_dropzone.html:45
+msgid "Default driver"
+msgstr "Kierowca"
+
+#: app/templates/documents/_dropzone.html:49
+msgid "Package may contain documents of different drivers"
+msgstr "Pakiet może zawierać dokumenty różnych kierowców"
+
+#: app/templates/documents/_dropzone.html:59
+msgid "file(s) selected"
+msgstr "wybrano plik(i)"
+
+#: app/templates/documents/_dropzone.html:61
+msgid "Clear"
+msgstr "Wyczyść"
+
+#: app/templates/documents/_dropzone.html:67
+msgid "Upload to inbox"
+msgstr "Wyślij do skrzynki"
+
+#: app/templates/documents/_dropzone.html:70
+msgid "Files land in the inbox; recognition & sorting come later."
+msgstr "Pliki trafiają do skrzynki; rozpoznawanie i sortowanie później."
+
+#: app/templates/documents/_inbox_entries.html:5
+msgid "Passports are listed first — save them first so new drivers exist before their other documents."
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:14
+msgid "Save this document (create/update the driver if needed)?"
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:20
+msgid "not saved"
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:22
+msgid "not recognized"
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:28
+msgid "Some identifiers do not match the required format — fix the highlighted fields, then save."
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:32
+#, python-format
+msgid "This document is already expired (%(label)s) — it will be saved straight to the archive."
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:46
+msgid "Bind to driver"
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:60
+msgid "Identification ID"
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:77
+msgid "Valid from"
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:81
+msgid "Valid to"
+msgstr ""
+
+#: app/templates/documents/_inbox_entry.html:93
+#: app/templates/documents/inbox.html:40 app/templates/drivers/form.html:129
+msgid "Confirm & save"
+msgstr "Zatwierdź i zapisz"
+
+#: app/templates/documents/_inbox_files.html:7
+msgid "Recognize all"
+msgstr ""
+
+#: app/templates/documents/_inbox_files.html:12
+msgid "Remove all files from the inbox?"
+msgstr ""
+
+#: app/templates/documents/_inbox_files.html:13
+msgid "Remove all"
+msgstr ""
+
+#: app/templates/documents/_inbox_files.html:19
+msgid "File"
+msgstr ""
+
+#: app/templates/documents/_inbox_files.html:19
+msgid "Size"
+msgstr ""
+
+#: app/templates/documents/_inbox_files.html:31
+msgid "Recognize"
+msgstr ""
+
+#: app/templates/documents/_inbox_files.html:33
+msgid "Delete file"
+msgstr ""
+
+#: app/templates/documents/_inbox_files.html:37
+msgid "Delete this file from the inbox?"
+msgstr ""
+
+#: app/templates/documents/_inbox_files.html:44
+msgid "The inbox is empty. Upload a package from the Drivers page."
+msgstr ""
+
+#: app/templates/documents/_inbox_saved.html:3
+msgid "Saved"
+msgstr ""
+
+#: app/templates/documents/_inbox_saved.html:4
+msgid "driver created"
+msgstr ""
+
+#: app/templates/documents/_inbox_saved.html:5
+msgid "archived"
+msgstr ""
+
+#: app/templates/documents/_preview.html:16
+msgid "FILE"
+msgstr ""
+
+#: app/templates/documents/driver_file_form.html:2
+#: app/templates/documents/driver_file_form.html:7
+msgid "Edit file"
+msgstr ""
+
+#: app/templates/documents/driver_file_form.html:36
+#: app/templates/documents/driver_form.html:57
+#: app/templates/documents/type_form.html:30
+#: app/templates/documents/vehicle_form.html:54
+#: app/templates/drivers/contract_form.html:51
+#: app/templates/drivers/form.html:93 app/templates/organisations/form.html:38
+#: app/templates/payroll/new.html:31 app/templates/trips/form.html:20
+#: app/templates/trips/segment_form.html:32 app/templates/vehicles/form.html:48
+msgid "Cancel"
+msgstr "Anuluj"
+
+#: app/templates/documents/driver_form.html:4
+#: app/templates/documents/driver_form.html:10
+#: app/templates/documents/vehicle_form.html:4
+#: app/templates/documents/vehicle_form.html:10
+msgid "Edit document"
+msgstr ""
+
+#: app/templates/documents/driver_form.html:4
+#: app/templates/documents/driver_form.html:10
+#: app/templates/documents/vehicle_form.html:4
+#: app/templates/documents/vehicle_form.html:10
+msgid "New document"
+msgstr ""
+
+#: app/templates/documents/driver_form.html:41
+#: app/templates/documents/vehicle_form.html:41
+msgid "Current files"
+msgstr ""
+
+#: app/templates/documents/inbox.html:6
+msgid "Document inbox"
+msgstr ""
+
+#: app/templates/documents/inbox.html:8 app/templates/drivers/show.html:8
+msgid "Back to drivers"
+msgstr "Powrót do kierowców"
+
+#: app/templates/documents/inbox.html:14
+msgid "Upload documents"
+msgstr ""
+
+#: app/templates/documents/inbox.html:17
+msgid "Drag a package of documents here"
+msgstr ""
+
+#: app/templates/documents/inbox.html:18
+msgid "PDF, JPG or PNG — uploaded files land here in the inbox"
+msgstr ""
+
+#: app/templates/documents/inbox.html:25 app/templates/drivers/form.html:117
+msgid "Files awaiting recognition"
+msgstr "Pliki oczekujące na rozpoznanie"
+
+#: app/templates/documents/inbox.html:35 app/templates/drivers/form.html:124
+msgid "Recognizing…"
+msgstr "Rozpoznawanie…"
+
+#: app/templates/documents/inbox.html:43
+msgid "Recognised files appear here. Edit fields if needed, bind a driver manually if wanted, then save each one. Saving a passport creates the driver, so save passports first."
+msgstr ""
+
+#: app/templates/documents/inbox.html:49 app/templates/drivers/form.html:135
+msgid "Nothing to confirm yet — recognise a file above."
+msgstr "Nie ma jeszcze nic do zatwierdzenia — rozpoznaj plik powyżej."
+
+#: app/templates/documents/type_form.html:3
+#: app/templates/documents/type_form.html:9
+msgid "Edit document type"
+msgstr ""
+
+#: app/templates/documents/type_form.html:3
+#: app/templates/documents/type_form.html:9
+#: app/templates/documents/types_list.html:9
+msgid "New document type"
+msgstr ""
+
+#: app/templates/documents/types_list.html:35
+msgid "Delete this document type?"
+msgstr ""
+
+#: app/templates/documents/types_list.html:43
+msgid "No document types yet"
+msgstr ""
+
+#: app/templates/drivers/_deleted_table.html:6
+#: app/templates/drivers/_table.html:4 app/templates/organisations/list.html:18
+msgid "Name"
+msgstr "Imię i nazwisko"
+
+#: app/templates/drivers/_deleted_table.html:9
+#: app/templates/drivers/_table.html:7
+msgid "Contract"
+msgstr "Umowa"
+
+#: app/templates/drivers/_deleted_table.html:10
+#: app/templates/drivers/_table.html:10
+msgid "Hired"
+msgstr "Zatrudniony"
+
+#: app/templates/drivers/_deleted_table.html:11
+msgid "Deleted"
+msgstr "Usunięto"
+
+#: app/templates/drivers/_deleted_table.html:42
+#, python-format
+msgid "Restore driver %(name)s?"
+msgstr "Przywrócić kierowcę %(name)s?"
+
+#: app/templates/drivers/_deleted_table.html:44
+msgid "Restore"
+msgstr "Przywróć"
+
+#: app/templates/drivers/_deleted_table.html:50
+msgid "No deleted drivers"
+msgstr "Brak usuniętych kierowców"
+
+#: app/templates/drivers/_table.html:8 app/templates/drivers/show.html:128
+#: app/templates/vehicles/show.html:37
+msgid "Documents"
+msgstr "Dokumenty"
+
+#: app/templates/drivers/_table.html:9
+msgid "Expiring documents"
+msgstr "Wygasające dokumenty"
+
+#: app/templates/drivers/_table.html:49
+#: app/templates/organisations/list.html:32 app/templates/payroll/list.html:45
+#: app/templates/rates/list.html:73 app/templates/trips/list.html:34
+#: app/templates/vehicles/list.html:32
+msgid "View"
+msgstr "Otwórz"
+
+#: app/templates/drivers/_table.html:52
+#, python-format
+msgid "Delete driver %(name)s?"
+msgstr "Usunąć kierowcę %(name)s?"
+
+#: app/templates/drivers/_table.html:60
+msgid "No drivers found"
+msgstr "Nie znaleziono kierowców"
+
+#: app/templates/drivers/_vacations_mock.html:3
+#: app/templates/vacations/_panel.html:12
+msgid "Vacations & Schedule"
+msgstr "Urlopy i grafik"
+
+#: app/templates/drivers/_vacations_mock.html:5
+#: app/templates/vacations/_panel.html:16
+msgid "Sync now"
+msgstr "Synchronizuj teraz"
+
+#: app/templates/drivers/_vacations_mock.html:6
+#: app/templates/vacations/_panel.html:18
+msgid "Request leave"
+msgstr "Złóż wniosek urlopowy"
+
+#: app/templates/drivers/_vacations_mock.html:14
+msgid "Connected to Google Calendar"
+msgstr "Połączono z Google Calendar"
+
+#: app/templates/drivers/_vacations_mock.html:15
+msgid "last sync 12 min ago"
+msgstr "ostatnia synchronizacja 12 min temu"
+
+#: app/templates/drivers/_vacations_mock.html:18
+#: app/templates/settings/index.html:15
+msgid "Reconnect"
+msgstr "Połącz ponownie"
+
+#: app/templates/drivers/_vacations_mock.html:20
+msgid "Preview only — this tab is a design mock and is not connected to the backend yet."
+msgstr "Tylko podgląd — ta zakładka to makieta i nie jest jeszcze połączona z backendem."
+
+#: app/templates/drivers/_vacations_mock.html:23
+#: app/templates/vacations/_panel.html:6 app/templates/vacations/_panel.html:43
+#: app/templates/vacations/calendar.html:6 app/vacations/forms.py:13
+msgid "Annual leave"
+msgstr "Urlop wypoczynkowy"
+
+#: app/templates/drivers/_vacations_mock.html:23
+msgid "days entitled this year"
+msgstr "dni przysługujące w tym roku"
+
+#: app/templates/drivers/_vacations_mock.html:24
+msgid "Used"
+msgstr "Wykorzystano"
+
+#: app/templates/drivers/_vacations_mock.html:24
+msgid "days taken so far"
+msgstr "dni wykorzystane dotychczas"
+
+#: app/templates/drivers/_vacations_mock.html:25
+#: app/templates/vacations/_panel.html:44
+msgid "Remaining"
+msgstr "Pozostało"
+
+#: app/templates/drivers/_vacations_mock.html:25
+msgid "available to plan"
+msgstr "dostępne do zaplanowania"
+
+#: app/templates/drivers/_vacations_mock.html:29
+#: app/templates/drivers/_vacations_mock.html:32
+msgid "June"
+msgstr "Czerwiec"
+
+#: app/templates/drivers/_vacations_mock.html:69
+#: app/templates/vacations/_panel.html:88
+msgid "Vacation"
+msgstr "Urlop"
+
+#: app/templates/drivers/_vacations_mock.html:70
+#: app/templates/vacations/_panel.html:90
+msgid "Weekend"
+msgstr "Weekend"
+
+#: app/templates/drivers/_vacations_mock.html:71
+#: app/templates/vacations/_panel.html:91
+msgid "Today"
+msgstr "Dziś"
+
+#: app/templates/drivers/_vacations_mock.html:74
+msgid "Upcoming & recent (from Google Calendar)"
+msgstr "Nadchodzące i ostatnie (z Google Calendar)"
+
+#: app/templates/drivers/_vacations_mock.html:78
+msgid "Summer vacation"
+msgstr "Urlop letni"
+
+#: app/templates/drivers/_vacations_mock.html:78
+msgid "Approved · created in Google Calendar"
+msgstr "Zatwierdzono · utworzono w Google Calendar"
+
+#: app/templates/drivers/_vacations_mock.html:79
+#: app/templates/drivers/_vacations_mock.html:84
+#: app/templates/drivers/_vacations_mock.html:89
+msgid "days"
+msgstr "dni"
+
+#: app/templates/drivers/_vacations_mock.html:83
+msgid "Personal days"
+msgstr "Dni wolne na żądanie"
+
+#: app/templates/drivers/_vacations_mock.html:83
+msgid "Pending approval · synced 12 min ago"
+msgstr "Oczekuje na zatwierdzenie · synchronizacja 12 min temu"
+
+#: app/templates/drivers/_vacations_mock.html:88
+msgid "Spring break"
+msgstr "Przerwa wiosenna"
+
+#: app/templates/drivers/_vacations_mock.html:88
+#: app/templates/vacations/_panel.html:101
+msgid "Completed"
+msgstr "Zakończono"
+
+#: app/templates/drivers/contract_form.html:2
+#: app/templates/drivers/contract_form.html:6
+msgid "Edit contract"
+msgstr "Edytuj umowę"
+
+#: app/templates/drivers/contract_form.html:2
+#: app/templates/drivers/contract_form.html:6
+msgid "Add contract"
+msgstr "Dodaj umowę"
+
+#: app/templates/drivers/form.html:3 app/templates/drivers/form.html:10
+msgid "Edit driver"
+msgstr "Edytuj kierowcę"
+
+#: app/templates/drivers/form.html:3 app/templates/drivers/form.html:11
+#: app/templates/drivers/list.html:9
+msgid "New driver"
+msgstr "Nowy kierowca"
+
+#: app/templates/drivers/form.html:104
+msgid "… or create from documents"
+msgstr "… lub utwórz z dokumentów"
+
+#: app/templates/drivers/form.html:107
+msgid "Start with the passport: recognise and save it first — that creates the driver. The passport must be among the uploaded files; only then can the remaining documents be attached. Upload the passport, recognise it, then add the rest."
+msgstr "Zacznij od paszportu: najpierw go rozpoznaj i zapisz — to tworzy kierowcę. Paszport musi być wśród przesłanych plików; dopiero wtedy można dołączyć pozostałe dokumenty. Prześlij paszport, rozpoznaj go, a następnie dodaj resztę."
+
+#: app/templates/drivers/form.html:110
+msgid "Drag the passport (and other documents) here"
+msgstr "Przeciągnij paszport (i inne dokumenty) tutaj"
+
+#: app/templates/drivers/form.html:132
+msgid "Recognise the passport first to create the driver, then the remaining documents. A non-passport saved before the passport stays in the inbox until the driver exists."
+msgstr "Najpierw rozpoznaj paszport, aby utworzyć kierowcę, potem pozostałe dokumenty. Dokument inny niż paszport zapisany przed paszportem pozostaje w skrzynce do czasu utworzenia kierowcy."
+
+#: app/templates/drivers/list.html:16
+msgid "Total drivers"
+msgstr "Wszyscy kierowcy"
+
+#: app/templates/drivers/list.html:20
+msgid "Active contracts"
+msgstr "Aktywne umowy"
+
+#: app/templates/drivers/list.html:23
+#, python-format
+msgid "%(n)d without contract"
+msgstr "%(n)d bez umowy"
+
+#: app/templates/drivers/list.html:29 app/templates/drivers/list.html:47
+msgid "Docs expiring"
+msgstr "Wygasające dokumenty"
+
+#: app/templates/drivers/list.html:31 app/templates/drivers/list.html:49
+msgid "expiring soon or expired"
+msgstr "wkrótce wygasają lub wygasły"
+
+#: app/templates/drivers/list.html:56 app/templates/drivers/list.html:74
+msgid "On leave now"
+msgstr "Obecnie na urlopie"
+
+#: app/templates/drivers/list.html:58
+msgid "see who"
+msgstr "zobacz kto"
+
+#: app/templates/drivers/list.html:67 app/templates/vacations/calendar.html:26
+msgid "until"
+msgstr "do"
+
+#: app/templates/drivers/list.html:86
+msgid "Search by name, PESEL, passport..."
+msgstr "Szukaj po nazwisku, PESEL, paszporcie..."
+
+#: app/templates/drivers/list.html:101
+msgid "Deleted drivers"
+msgstr "Usunięci kierowcy"
+
+#: app/templates/drivers/show.html:9
+msgid "Employee card"
+msgstr "Karta pracownika"
+
+#: app/templates/drivers/show.html:21
+msgid "inactive"
+msgstr "nieaktywny"
+
+#: app/templates/drivers/show.html:29
+msgid "Passport"
+msgstr "Paszport"
+
+#: app/templates/drivers/show.html:31
+msgid "non-EU"
+msgstr "spoza UE"
+
+#: app/templates/drivers/show.html:34
+msgid "Passport №"
+msgstr "Paszport №"
+
+#: app/templates/drivers/show.html:35 app/templates/organisations/list.html:19
+#: app/templates/organisations/show.html:25
+msgid "National ID"
+msgstr "Numer ID"
+
+#: app/templates/drivers/show.html:42
+msgid "Legal entity"
+msgstr "Podmiot prawny"
+
+#: app/templates/drivers/show.html:50
+msgid "Polish identifiers"
+msgstr "Identyfikatory polskie"
+
+#: app/templates/drivers/show.html:53
+msgid "Tachograph card"
+msgstr "Karta kierowcy (tachograf)"
+
+#: app/templates/drivers/show.html:58
+msgid "Contact"
+msgstr "Kontakt"
+
+#: app/templates/drivers/show.html:65
+msgid "Edit profile"
+msgstr "Edytuj profil"
+
+#: app/templates/drivers/show.html:75
+msgid "Required documents"
+msgstr "Wymagane dokumenty"
+
+#: app/templates/drivers/show.html:77
+msgid "Complete"
+msgstr "Kompletne"
+
+#: app/templates/drivers/show.html:79
+#, python-format
+msgid "%(n)d missing"
+msgstr "brakuje %(n)d"
+
+#: app/templates/drivers/show.html:81
+#, python-format
+msgid "%(n)d expiring"
+msgstr "%(n)d wygasa"
+
+#: app/templates/drivers/show.html:87
+msgid "Missing"
+msgstr "Brakujące"
+
+#: app/templates/drivers/show.html:98
+msgid "Expiring soon"
+msgstr "Wkrótce wygasają"
+
+#: app/templates/drivers/show.html:111
+msgid "In order"
+msgstr "W porządku"
+
+#: app/templates/drivers/show.html:114
+msgid "no expiry"
+msgstr "bez terminu"
+
+#: app/templates/drivers/show.html:131 app/templates/drivers/show.html:155
+msgid "Download all (.zip)"
+msgstr "Pobierz wszystko (.zip)"
+
+#: app/templates/drivers/show.html:134 app/templates/vehicles/show.html:40
+msgid "Add document"
+msgstr "Dodaj dokument"
+
+#: app/templates/drivers/show.html:153
+msgid "Archived documents"
+msgstr "Zarchiwizowane dokumenty"
+
+#: app/templates/main/dashboard.html:2 app/templates/main/dashboard.html:6
+msgid "Dashboard"
+msgstr ""
+
+#: app/templates/main/dashboard.html:7
+#, python-format
+msgid "Welcome back, %(name)s"
+msgstr ""
+
+#: app/templates/main/dashboard.html:12
+msgid "Active drivers"
+msgstr ""
+
+#: app/templates/main/dashboard.html:16
+msgid "Active vehicles"
+msgstr ""
+
+#: app/templates/main/dashboard.html:20
+msgid "Draft trips"
+msgstr ""
+
+#: app/templates/main/dashboard.html:22
+msgid "need confirmation"
+msgstr ""
+
+#: app/templates/main/dashboard.html:28
+msgid "Quick actions"
+msgstr ""
+
+#: app/templates/main/dashboard.html:33
+msgid "Manage drivers and their contracts"
+msgstr ""
+
+#: app/templates/main/dashboard.html:37
+msgid "Trucks and trailers"
+msgstr ""
+
+#: app/templates/main/dashboard.html:40 app/templates/rates/list.html:2
+#: app/templates/rates/list.html:7
+msgid "Country rates"
+msgstr ""
+
+#: app/templates/main/dashboard.html:41
+msgid "Sector wages by country and date"
+msgstr ""
+
+#: app/templates/organisations/form.html:3
+#: app/templates/organisations/form.html:9
+msgid "Edit organisation"
+msgstr ""
+
+#: app/templates/organisations/form.html:3
+#: app/templates/organisations/form.html:10
+#: app/templates/organisations/list.html:9
+msgid "New organisation"
+msgstr ""
+
+#: app/templates/organisations/list.html:35
+msgid "No organisations yet"
+msgstr ""
+
+#: app/templates/organisations/show.html:15
+msgid "Delete this organisation?"
+msgstr ""
+
+#: app/templates/organisations/show.html:41
+msgid "No drivers"
+msgstr ""
+
+#: app/templates/organisations/show.html:53
+msgid "No vehicles"
+msgstr ""
+
+#: app/templates/payroll/list.html:2
+msgid "Payroll"
+msgstr ""
+
+#: app/templates/payroll/list.html:6
+msgid "Payroll periods"
+msgstr ""
+
+#: app/templates/payroll/list.html:8
+msgid "New period"
+msgstr ""
+
+#: app/templates/payroll/list.html:16 app/templates/rates/lookup.html:62
+msgid "Period"
+msgstr ""
+
+#: app/templates/payroll/list.html:19
+msgid "EUR/PLN"
+msgstr ""
+
+#: app/templates/payroll/list.html:20 app/templates/payroll/show.html:17
+msgid "Days abroad"
+msgstr ""
+
+#: app/templates/payroll/list.html:21 app/templates/payroll/show.html:42
+#: app/templates/payroll/show.html:102
+msgid "Gross"
+msgstr ""
+
+#: app/templates/payroll/list.html:22 app/templates/payroll/show.html:112
+msgid "Net"
+msgstr ""
+
+#: app/templates/payroll/list.html:23
+msgid "Sanitariaty"
+msgstr ""
+
+#: app/templates/payroll/list.html:48
+msgid "No payroll periods yet"
+msgstr ""
+
+#: app/templates/payroll/new.html:2 app/templates/payroll/new.html:5
+msgid "New payroll period"
+msgstr ""
+
+#: app/templates/payroll/new.html:9
+msgid "Phase 2 calculation includes: base salary, foreign sector wage with equalization, sanitariaty, virtual ZUS/PIT diets and bases. Only CONFIRMED trips are included. ZUS/PIT amounts are NOT computed — only the bases that go into your accounting software."
+msgstr ""
+
+#: app/templates/payroll/new.html:22
+msgid "Fetch NBP"
+msgstr ""
+
+#: app/templates/payroll/new.html:26
+msgid "Standard convention: NBP table A, working day before last day of period month."
+msgstr ""
+
+#: app/templates/payroll/new.html:50
+msgid "Please pick year and month first."
+msgstr ""
+
+#: app/templates/payroll/new.html:55
+msgid "Fetching…"
+msgstr ""
+
+#: app/templates/payroll/new.html:68
+msgid "NBP table A rate"
+msgstr ""
+
+#: app/templates/payroll/new.html:68
+msgid "effective"
+msgstr ""
+
+#: app/templates/payroll/show.html:18
+msgid "override"
+msgstr ""
+
+#: app/templates/payroll/show.html:27
+msgid "Recalculate"
+msgstr ""
+
+#: app/templates/payroll/show.html:32
+msgid "Approve and freeze this period?"
+msgstr ""
+
+#: app/templates/payroll/show.html:34
+msgid "Approve"
+msgstr ""
+
+#: app/templates/payroll/show.html:47
+msgid "ZUS base"
+msgstr ""
+
+#: app/templates/payroll/show.html:49 app/templates/payroll/show.html:54
+msgid "after virtual diet"
+msgstr ""
+
+#: app/templates/payroll/show.html:52
+msgid "PIT base"
+msgstr ""
+
+#: app/templates/payroll/show.html:57
+msgid "Net pay"
+msgstr ""
+
+#: app/templates/payroll/show.html:59
+msgid "incl. sanitariaty"
+msgstr ""
+
+#: app/templates/payroll/show.html:64
+msgid "Breakdown"
+msgstr ""
+
+#: app/templates/payroll/show.html:70 app/templates/trips/list.html:18
+#: app/templates/trips/show.html:46
+msgid "Hours"
+msgstr ""
+
+#: app/templates/payroll/show.html:71
+msgid "Rate"
+msgstr ""
+
+#: app/templates/payroll/show.html:72
+msgid "Native"
+msgstr ""
+
+#: app/templates/payroll/show.html:73
+msgid "PLN"
+msgstr ""
+
+#: app/templates/payroll/show.html:74 app/templates/rates/show.html:49
+msgid "Description"
+msgstr ""
+
+#: app/templates/payroll/show.html:89
+msgid "No line items — period not calculated yet"
+msgstr ""
+
+#: app/templates/payroll/show.html:96
+msgid "Pay summary"
+msgstr ""
+
+#: app/templates/payroll/show.html:98
+msgid "Foreign sector wage"
+msgstr ""
+
+#: app/templates/payroll/show.html:100
+msgid "Equalization"
+msgstr ""
+
+#: app/templates/payroll/show.html:104
+msgid "− ZUS employee (13.71%)"
+msgstr ""
+
+#: app/templates/payroll/show.html:106
+msgid "− Health insurance (9%)"
+msgstr ""
+
+#: app/templates/payroll/show.html:108
+msgid "− PIT advance"
+msgstr ""
+
+#: app/templates/payroll/show.html:110
+msgid "+ Sanitariaty (exempt)"
+msgstr ""
+
+#: app/templates/payroll/show.html:118
+msgid "Audit info"
+msgstr ""
+
+#: app/templates/payroll/show.html:120
+msgid "Phase 2 scope: virtual diets (ZUS −60 EUR/day above threshold, PIT −20 EUR/day from day 1), sanitariaty (60 PLN/day exempt), simplified ZUS/PIT calculation."
+msgstr ""
+
+#: app/templates/payroll/show.html:121
+#, python-format
+msgid "PIT calculation is simplified: single 12%% bracket. Annual bracket-2 reconciliation deferred. Health insurance base simplified to (gross − ZUS social). Overtime, night work, leave, sick pay — Phase 6."
+msgstr ""
+
+#: app/templates/payroll/show.html:122
+msgid "Each foreign-wage line links to a CountryRateSnapshot. EUR/PLN rate cached from NBP if auto-fetched. The calculation remains reproducible even after data updates."
+msgstr ""
+
+#: app/templates/rates/list.html:9
+msgid "Loaded from YAML files in data/country_rates/. Update via git PR."
+msgstr ""
+
+#: app/templates/rates/list.html:13
+msgid "Quick lookup"
+msgstr ""
+
+#: app/templates/rates/list.html:19
+msgid "Stale verifications:"
+msgstr ""
+
+#: app/templates/rates/list.html:20
+#, python-format
+msgid "%(count)d countries have not been re-verified in 90+ days"
+msgstr ""
+
+#: app/templates/rates/list.html:21
+msgid "Run"
+msgstr ""
+
+#: app/templates/rates/list.html:21
+msgid "to list them"
+msgstr ""
+
+#: app/templates/rates/list.html:29
+msgid "Code"
+msgstr ""
+
+#: app/templates/rates/list.html:31 app/templates/rates/show.html:12
+msgid "Currency"
+msgstr ""
+
+#: app/templates/rates/list.html:32
+msgid "Periods"
+msgstr ""
+
+#: app/templates/rates/list.html:33
+msgid "Current rates"
+msgstr ""
+
+#: app/templates/rates/list.html:34 app/templates/rates/lookup.html:64
+msgid "Last verified"
+msgstr ""
+
+#: app/templates/rates/list.html:58
+msgid "no active period"
+msgstr ""
+
+#: app/templates/rates/lookup.html:2 app/templates/rates/lookup.html:6
+msgid "Rate lookup"
+msgstr ""
+
+#: app/templates/rates/lookup.html:7
+msgid "Find what rate would apply for a country + rate name + date."
+msgstr ""
+
+#: app/templates/rates/lookup.html:15
+msgid "select"
+msgstr ""
+
+#: app/templates/rates/lookup.html:25 app/templates/rates/lookup.html:54
+#: app/templates/rates/show.html:46 app/templates/rates/show.html:90
+#: app/templates/trips/show.html:47
+msgid "Rate name"
+msgstr ""
+
+#: app/templates/rates/lookup.html:32 app/templates/trips/show.html:43
+msgid "Date"
+msgstr ""
+
+#: app/templates/rates/lookup.html:37
+msgid "Look up"
+msgstr ""
+
+#: app/templates/rates/lookup.html:49
+msgid "Result"
+msgstr ""
+
+#: app/templates/rates/lookup.html:56 app/templates/rates/show.html:47
+#: app/templates/rates/show.html:91
+msgid "Hourly"
+msgstr ""
+
+#: app/templates/rates/lookup.html:59
+msgid "Monthly gross"
+msgstr ""
+
+#: app/templates/rates/lookup.html:63 app/templates/rates/show.html:38
+#: app/templates/rates/show.html:82
+msgid "open"
+msgstr ""
+
+#: app/templates/rates/lookup.html:67 app/templates/rates/show.html:107
+msgid "Sources"
+msgstr ""
+
+#: app/templates/rates/show.html:13
+msgid "Default hours/month"
+msgstr ""
+
+#: app/templates/rates/show.html:17
+msgid "All countries"
+msgstr ""
+
+#: app/templates/rates/show.html:23
+msgid "Official sources"
+msgstr ""
+
+#: app/templates/rates/show.html:26
+msgid "Primary source"
+msgstr ""
+
+#: app/templates/rates/show.html:29
+msgid "Posting portal"
+msgstr ""
+
+#: app/templates/rates/show.html:38
+msgid "Current period"
+msgstr ""
+
+#: app/templates/rates/show.html:40 app/templates/rates/show.html:85
+msgid "verified"
+msgstr ""
+
+#: app/templates/rates/show.html:40
+msgid "by"
+msgstr ""
+
+#: app/templates/rates/show.html:48 app/templates/rates/show.html:92
+msgid "Monthly"
+msgstr ""
+
+#: app/templates/rates/show.html:71
+#, python-format
+msgid "No rate period covers today (%(date)s). Check the YAML — there may be a gap."
+msgstr ""
+
+#: app/templates/rates/show.html:77
+msgid "All periods"
+msgstr ""
+
+#: app/templates/rates/show.html:83
+msgid "current"
+msgstr ""
+
+#: app/templates/rates/show.html:84
+msgid "rates"
+msgstr ""
+
+#: app/templates/settings/index.html:11 app/templates/vacations/_panel.html:102
+msgid "Google Calendar"
+msgstr "Google Calendar"
+
+#: app/templates/settings/index.html:15
+msgid "Connect"
+msgstr "Połącz"
+
+#: app/templates/settings/index.html:26
+msgid "Google credentials not set"
+msgstr "Nie ustawiono danych Google"
+
+#: app/templates/settings/index.html:27
+msgid "Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in the environment, then reload."
+msgstr "Ustaw GOOGLE_CLIENT_ID i GOOGLE_CLIENT_SECRET w środowisku, a następnie przeładuj."
+
+#: app/templates/settings/index.html:36
+msgid "Connected"
+msgstr "Połączono"
+
+#: app/templates/settings/index.html:39 app/templates/vacations/_panel.html:33
+msgid "Not connected"
+msgstr "Nie połączono"
+
+#: app/templates/settings/index.html:43
+msgid "Last sync"
+msgstr "Ostatnia synchronizacja"
+
+#: app/templates/settings/index.html:46
+msgid "Calendar for new leaves"
+msgstr "Kalendarz dla nowych urlopów"
+
+#: app/templates/settings/index.html:49
+msgid "Embedded month-view calendar"
+msgstr "Osadzony kalendarz (widok miesiąca)"
+
+#: app/templates/settings/index.html:52
+msgid "not set"
+msgstr "nie ustawiono"
+
+#: app/templates/settings/index.html:55
+msgid "Leaves added to drivers are pushed to the calendar above; the fleet Vacations page embeds the month view. The embedded calendar must be public or shared so it renders for app users."
+msgstr "Urlopy dodane kierowcom są wysyłane do powyższego kalendarza; strona Urlopy osadza widok miesiąca. Osadzony kalendarz musi być publiczny lub udostępniony, aby był widoczny dla użytkowników aplikacji."
+
+#: app/templates/trips/form.html:2 app/templates/trips/form.html:5
+#: app/templates/trips/list.html:7
+msgid "New trip"
+msgstr ""
+
+#: app/templates/trips/list.html:2 app/templates/trips/list.html:6
+msgid "Trips"
+msgstr ""
+
+#: app/templates/trips/list.html:16
+msgid "Vehicle"
+msgstr ""
+
+#: app/templates/trips/list.html:17
+msgid "Dates"
+msgstr ""
+
+#: app/templates/trips/list.html:19
+msgid "Posted h."
+msgstr ""
+
+#: app/templates/trips/list.html:37
+msgid "No trips yet"
+msgstr ""
+
+#: app/templates/trips/segment_form.html:2 app/templates/trips/show.html:24
+msgid "Add segment"
+msgstr ""
+
+#: app/templates/trips/segment_form.html:6
+msgid "Add segment to trip"
+msgstr ""
+
+#: app/templates/trips/segment_form.html:11
+msgid "Segment type cheat-sheet:"
+msgstr ""
+
+#: app/templates/trips/segment_form.html:12
+msgid "passing through, no load/unload. NOT posted."
+msgstr ""
+
+#: app/templates/trips/segment_form.html:13
+msgid "PL ↔ X. NOT posted."
+msgstr ""
+
+#: app/templates/trips/segment_form.html:14
+msgid "within ONE foreign country (e.g. DE → DE). POSTED."
+msgstr ""
+
+#: app/templates/trips/segment_form.html:15
+msgid "between TWO foreign countries (e.g. DE → FR). POSTED."
+msgstr ""
+
+#: app/templates/trips/show.html:2 app/templates/trips/show.html:7
+msgid "Trip"
+msgstr ""
+
+#: app/templates/trips/show.html:20
+msgid "Confirm trip"
+msgstr ""
+
+#: app/templates/trips/show.html:30 app/templates/trips/show.html:37
+msgid "Segments"
+msgstr ""
+
+#: app/templates/trips/show.html:31
+msgid "Total hours"
+msgstr ""
+
+#: app/templates/trips/show.html:32
+msgid "Posted hours"
+msgstr ""
+
+#: app/templates/trips/show.html:33
+msgid "cabotage + cross-trade"
+msgstr ""
+
+#: app/templates/trips/show.html:62
+msgid "Subject to foreign sector wage"
+msgstr ""
+
+#: app/templates/trips/show.html:70
+msgid "Delete this segment?"
+msgstr ""
+
+#: app/templates/trips/show.html:81
+msgid "No segments yet. Add the first one with the button above."
+msgstr ""
+
+#: app/templates/vacations/_panel.html:6
+#: app/templates/vacations/calendar.html:6 app/vacations/forms.py:14
+msgid "On-demand leave"
+msgstr "Urlop na żądanie"
+
+#: app/templates/vacations/_panel.html:7 app/templates/vacations/_panel.html:52
+#: app/templates/vacations/calendar.html:7 app/vacations/forms.py:15
+msgid "Sick leave (L4)"
+msgstr "Zwolnienie lekarskie (L4)"
+
+#: app/templates/vacations/_panel.html:7
+#: app/templates/vacations/calendar.html:7 app/vacations/forms.py:16
+msgid "Unpaid leave"
+msgstr "Urlop bezpłatny"
+
+#: app/templates/vacations/_panel.html:7
+#: app/templates/vacations/calendar.html:7 app/vacations/forms.py:17
+msgid "Other"
+msgstr "Inne"
+
+#: app/templates/vacations/_panel.html:30
+msgid "Google Calendar connected"
+msgstr "Połączono z Google Calendar"
+
+#: app/templates/vacations/_panel.html:31
+msgid "last sync"
+msgstr "ostatnia synchronizacja"
+
+#: app/templates/vacations/_panel.html:34
+msgid "Connect to sync leaves."
+msgstr "Połącz, aby synchronizować urlopy."
+
+#: app/templates/vacations/_panel.html:48
+#, python-format
+msgid "%(n)d used"
+msgstr "wykorzystano %(n)d"
+
+#: app/templates/vacations/_panel.html:48
+#, python-format
+msgid "%(n)d carried over"
+msgstr "%(n)d z przeniesienia"
+
+#: app/templates/vacations/_panel.html:54
+msgid "days this year · no limit"
+msgstr "dni w tym roku · bez limitu"
+
+#: app/templates/vacations/_panel.html:69
+msgid "Mon"
+msgstr "Pn"
+
+#: app/templates/vacations/_panel.html:69
+msgid "Tue"
+msgstr "Wt"
+
+#: app/templates/vacations/_panel.html:70
+msgid "Wed"
+msgstr "Śr"
+
+#: app/templates/vacations/_panel.html:70
+msgid "Thu"
+msgstr "Cz"
+
+#: app/templates/vacations/_panel.html:71
+msgid "Fri"
+msgstr "Pt"
+
+#: app/templates/vacations/_panel.html:71
+msgid "Sat"
+msgstr "Sb"
+
+#: app/templates/vacations/_panel.html:71
+msgid "Sun"
+msgstr "Nd"
+
+#: app/templates/vacations/_panel.html:89
+msgid "Sick (L4)"
+msgstr "Chorobowe (L4)"
+
+#: app/templates/vacations/_panel.html:97
+msgid "Upcoming & recent"
+msgstr "Nadchodzące i ostatnie"
+
+#: app/templates/vacations/_panel.html:101
+msgid "In progress"
+msgstr "W trakcie"
+
+#: app/templates/vacations/_panel.html:101
+msgid "Upcoming"
+msgstr "Nadchodzące"
+
+#: app/templates/vacations/_panel.html:102
+msgid "manual"
+msgstr "ręcznie"
+
+#: app/templates/vacations/_panel.html:110
+msgid "d"
+msgstr "d"
+
+#: app/templates/vacations/_panel.html:114
+msgid "Delete this leave?"
+msgstr "Usunąć ten urlop?"
+
+#: app/templates/vacations/_panel.html:119
+msgid "No leaves recorded for this year yet."
+msgstr "Brak zarejestrowanych urlopów w tym roku."
+
+#: app/templates/vacations/_panel.html:127
+msgid "Add leave"
+msgstr "Dodaj urlop"
+
+#: app/templates/vacations/_panel.html:134 app/vacations/forms.py:30
+msgid "Note"
+msgstr "Notatka"
+
+#: app/templates/vacations/_panel.html:141
+msgid "Edit entitlement"
+msgstr "Edytuj wymiar urlopu"
+
+#: app/templates/vacations/_panel.html:145 app/vacations/forms.py:40
+msgid "Base days"
+msgstr "Dni podstawowe"
+
+#: app/templates/vacations/_panel.html:146 app/vacations/forms.py:43
+msgid "Carried over"
+msgstr "Przeniesione"
+
+#: app/templates/vacations/_panel.html:147 app/vacations/forms.py:46
+msgid "Adjustment (±)"
+msgstr "Korekta (±)"
+
+#: app/templates/vacations/calendar.html:2
+#: app/templates/vacations/calendar.html:10
+#: app/templates/vacations/calendar.html:41
+msgid "Vacation calendar"
+msgstr "Kalendarz urlopów"
+
+#: app/templates/vacations/calendar.html:16
+msgid "On leave today"
+msgstr "Dziś na urlopie"
+
+#: app/templates/vacations/calendar.html:31
+msgid "Nobody is on leave today."
+msgstr "Dziś nikt nie jest na urlopie."
+
+#: app/templates/vacations/calendar.html:38
+msgid "Month view"
+msgstr "Widok miesiąca"
+
+#: app/templates/vacations/calendar.html:48
+msgid "Calendar embed not configured"
+msgstr "Osadzony kalendarz nie jest skonfigurowany"
+
+#: app/templates/vacations/calendar.html:49
+msgid "Set GOOGLE_CALENDAR_EMBED_ID to a public/shared calendar to show the month view here."
+msgstr "Ustaw GOOGLE_CALENDAR_EMBED_ID na publiczny/udostępniony kalendarz, aby pokazać tutaj widok miesiąca."
+
+#: app/templates/vehicles/form.html:3 app/templates/vehicles/form.html:9
+msgid "Edit vehicle"
+msgstr ""
+
+#: app/templates/vehicles/form.html:3 app/templates/vehicles/form.html:10
+#: app/templates/vehicles/list.html:9
+msgid "New vehicle"
+msgstr ""
+
+#: app/templates/vehicles/list.html:18
+msgid "Plate"
+msgstr ""
+
+#: app/templates/vehicles/list.html:20
+msgid "Brand / Model"
+msgstr ""
+
+#: app/templates/vehicles/list.html:35
+msgid "No vehicles registered yet"
+msgstr ""
+
+#: app/templates/vehicles/show.html:27 app/vehicles/forms.py:38
+msgid "Acquisition date"
+msgstr ""
+
+#: app/templates/vehicles/show.html:28 app/vehicles/forms.py:39
+msgid "Manufacture date"
+msgstr ""
+
+#: app/templates/vehicles/show.html:30
+msgid "Active"
+msgstr ""
+
+#: app/templates/vehicles/show.html:31
+msgid "Inactive"
+msgstr ""
+
+#: app/trips/forms.py:25
+msgid "Vehicle (tractor)"
+msgstr ""
+
+#: app/trips/forms.py:27
+msgid "Trip number"
+msgstr ""
+
+#: app/trips/forms.py:38
+msgid "Sequence"
+msgstr ""
+
+#: app/trips/forms.py:42
+msgid "Work date"
+msgstr ""
+
+#: app/trips/forms.py:44
+msgid "Country (ISO-2)"
+msgstr ""
+
+#: app/trips/forms.py:48
+msgid "Must be 2-letter ISO code: DE, FR, IT, ..."
+msgstr ""
+
+#: app/trips/forms.py:53
+msgid "Segment type"
+msgstr ""
+
+#: app/trips/forms.py:58
+msgid "Work hours"
+msgstr ""
+
+#: app/trips/forms.py:63
+msgid "Rate name (from YAML)"
+msgstr ""
+
+#: app/trips/forms.py:71
+msgid "Save segment"
+msgstr ""
+
+#: app/trips/routes.py:65
+#, python-format
+msgid "Trip %(num)s created"
+msgstr ""
+
+#: app/trips/routes.py:82
+msgid "Cannot confirm trip without segments"
+msgstr ""
+
+#: app/trips/routes.py:86
+msgid "Trip confirmed and locked"
+msgstr ""
+
+#: app/trips/routes.py:95
+msgid "Cannot add segments to a confirmed trip"
+msgstr ""
+
+#: app/trips/routes.py:115
+msgid "Segment added"
+msgstr ""
+
+#: app/trips/routes.py:126
+msgid "Cannot delete segments from a confirmed trip"
+msgstr ""
+
+#: app/trips/routes.py:133
+msgid "Segment deleted"
+msgstr ""
+
+#: app/vacations/forms.py:35
+msgid "End date must not be before the start date."
+msgstr ""
+
+#: app/vacations/routes.py:115
+#, python-format
+msgid "Leave added (%(days)d day(s))"
+msgstr ""
+
+#: app/vacations/routes.py:136
+msgid "Removed locally, but Google Calendar update failed."
+msgstr ""
+
+#: app/vacations/routes.py:140
+msgid "Leave removed."
+msgstr ""
+
+#: app/vacations/routes.py:161
+msgid "Entitlement updated."
+msgstr ""
+
+#: app/vacations/routes.py:163
+msgid "Invalid entitlement values."
+msgstr ""
+
+#: app/vacations/routes.py:175
+msgid "Google Calendar is not connected."
+msgstr ""
+
+#: app/vacations/routes.py:184
+msgid "Could not reach Google Calendar."
+msgstr ""
+
+#: app/vacations/routes.py:221
+#, python-format
+msgid "Synced. %(n)d new event(s) imported."
+msgstr ""
+
+#: app/vacations/routes.py:231
+msgid "Set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET first."
+msgstr ""
+
+#: app/vacations/routes.py:246
+msgid "Google authorisation was cancelled."
+msgstr ""
+
+#: app/vacations/routes.py:267
+#, python-format
+msgid "Google Calendar connected (%(email)s)."
+msgstr ""
+
+#: app/vacations/routes.py:301
+msgid "Saved locally, but Google Calendar sync failed."
+msgstr ""
+
+#: app/vehicles/forms.py:14
+msgid "Registration plate"
+msgstr ""
+
+#: app/vehicles/forms.py:24
+msgid "VIN"
+msgstr ""
+
+#: app/vehicles/forms.py:28
+msgid "VIN must be 17 alphanumeric chars (no I/O/Q)"
+msgstr ""
+
+#: app/vehicles/forms.py:31
+msgid "Brand"
+msgstr ""
+
+#: app/vehicles/forms.py:32
+msgid "Model"
+msgstr ""
+
+#: app/vehicles/routes.py:66
+#, python-format
+msgid "Vehicle %(plate)s added"
+msgstr ""
+
+#: app/vehicles/routes.py:87
+msgid "Vehicle updated"
+msgstr ""
+
+#: app/vehicles/routes.py:98
+#, python-format
+msgid "Vehicle %(plate)s deleted"
+msgstr ""
+

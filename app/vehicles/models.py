@@ -33,6 +33,12 @@ class Vehicle(PrdStandardMixin, db.Model):
     brand: Mapped[str] = mapped_column(String(100), nullable=False)
     model: Mapped[str] = mapped_column(String(100), nullable=False)
     registration_plate: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    # Country that issued the registration, ISO 3166-1 alpha-3 (same convention as
+    # Driver.nationality). Detected from the registration certificate (tech_passport).
+    registration_country: Mapped[str | None] = mapped_column(String(3), nullable=True)
+    # Date the vehicle was registered (from the registration certificate). Stored
+    # as a plain date; presented as YYYY-MM-DD.
+    registration_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     acquisition_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     manufacture_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     is_active: Mapped[bool] = mapped_column(default=True, nullable=False)
@@ -51,6 +57,27 @@ class Vehicle(PrdStandardMixin, db.Model):
         back_populates="vehicle",
         order_by="VehicleDocument.end_date",
     )
+
+    @property
+    def active_documents(self) -> list:
+        """Current documents — excludes soft-deleted and archived (PRD §8.6)."""
+        return [
+            d for d in self.documents
+            if not d.is_deleted and d.archived_at is None
+        ]
+
+    @property
+    def archived_documents(self) -> list:
+        """Outdated versions moved to Archive/ — kept as history (PRD §8.6)."""
+        return [
+            d for d in self.documents
+            if not d.is_deleted and d.archived_at is not None
+        ]
+
+    @property
+    def display_name(self) -> str:
+        """Folder/label name per the TZ naming convention, e.g. ``Volvo WB1234A``."""
+        return f"{self.brand} {self.registration_plate}".strip()
 
     @property
     def id(self) -> uuid.UUID:

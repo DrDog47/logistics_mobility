@@ -1,0 +1,90 @@
+{# Vacations & Schedule — VISUAL MOCK ONLY. Static sample data, no backend. #}
+<div class="panel-header">
+    <div class="panel-title">{{ _('Vacations & Schedule') }}</div>
+    <div class="panel-actions">
+        <button class="btn btn--ghost btn--sm" disabled>{{ _('Sync now') }}</button>
+        <button class="btn btn--primary btn--sm" disabled>+ {{ _('Request leave') }}</button>
+    </div>
+</div>
+
+<div class="gcal-banner">
+    <div class="left">
+        <div class="gcal-icon">📅</div>
+        <div class="gcal-text">
+            <strong>{{ _('Connected to Google Calendar') }}</strong>
+            <span>fleet-ops@company.com · {{ _('last sync 12 min ago') }}</span>
+        </div>
+    </div>
+    <button class="btn btn--ghost btn--sm" disabled>{{ _('Reconnect') }}</button>
+</div>
+<p class="muted" style="margin-bottom:20px">{{ _('Preview only — this tab is a design mock and is not connected to the backend yet.') }}</p>
+
+<div class="vac-summary">
+    <div class="vac-stat"><div class="k">{{ _('Annual leave') }}</div><div class="v">26 / 26</div><div class="sub">{{ _('days entitled this year') }}</div></div>
+    <div class="vac-stat"><div class="k">{{ _('Used') }}</div><div class="v">14</div><div class="sub">{{ _('days taken so far') }}</div></div>
+    <div class="vac-stat"><div class="k">{{ _('Remaining') }}</div><div class="v" style="color:var(--c-accent)">12</div><div class="sub">{{ _('available to plan') }}</div></div>
+</div>
+
+<div class="calendar-head">
+    <div class="calendar-title">{{ _('June') }} 2026</div>
+    <div class="calendar-nav">
+        <button disabled>‹</button>
+        <span class="month-name">{{ _('June') }} 2026</span>
+        <button disabled>›</button>
+    </div>
+</div>
+
+<div class="calendar">
+    <div class="cal-dow">Mon</div><div class="cal-dow">Tue</div><div class="cal-dow">Wed</div>
+    <div class="cal-dow">Thu</div><div class="cal-dow">Fri</div><div class="cal-dow">Sat</div><div class="cal-dow">Sun</div>
+
+    <div class="cal-day muted">1</div><div class="cal-day muted">2</div><div class="cal-day muted">3</div>
+    <div class="cal-day muted">4</div><div class="cal-day muted">5</div>
+    <div class="cal-day weekend muted">6</div><div class="cal-day weekend muted">7</div>
+
+    <div class="cal-day">8</div><div class="cal-day today">9</div><div class="cal-day">10</div>
+    <div class="cal-day">11</div><div class="cal-day">12</div>
+    <div class="cal-day weekend">13</div><div class="cal-day weekend">14</div>
+
+    <div class="cal-day vacation">15<div class="ev-dot"></div></div>
+    <div class="cal-day vacation">16<div class="ev-dot"></div></div>
+    <div class="cal-day vacation">17<div class="ev-dot"></div></div>
+    <div class="cal-day vacation">18<div class="ev-dot"></div></div>
+    <div class="cal-day vacation">19<div class="ev-dot"></div></div>
+    <div class="cal-day weekend vacation">20<div class="ev-dot"></div></div>
+    <div class="cal-day weekend vacation">21<div class="ev-dot"></div></div>
+
+    <div class="cal-day vacation">22<div class="ev-dot"></div></div>
+    <div class="cal-day vacation">23<div class="ev-dot"></div></div>
+    <div class="cal-day vacation">24<div class="ev-dot"></div></div>
+    <div class="cal-day">25</div><div class="cal-day">26</div>
+    <div class="cal-day weekend">27</div><div class="cal-day weekend">28</div>
+
+    <div class="cal-day">29</div><div class="cal-day">30</div>
+    <div class="cal-day muted">1</div><div class="cal-day muted">2</div><div class="cal-day muted">3</div>
+    <div class="cal-day weekend muted">4</div><div class="cal-day weekend muted">5</div>
+</div>
+
+<div class="vac-legend">
+    <div class="item"><span class="sw" style="background:var(--c-success-bg);border:1px solid #c8e3d5"></span>{{ _('Vacation') }}</div>
+    <div class="item"><span class="sw" style="background:#faf8f3;border:1px solid var(--c-border)"></span>{{ _('Weekend') }}</div>
+    <div class="item"><span class="sw" style="background:#fff;border:1.5px solid var(--c-accent)"></span>{{ _('Today') }}</div>
+</div>
+
+<div class="vac-list-title">{{ _('Upcoming & recent (from Google Calendar)') }}</div>
+
+<div class="vac-item">
+    <div class="vi-icon">🏖</div>
+    <div class="info"><div class="title">{{ _('Summer vacation') }}</div><div class="meta">{{ _('Approved · created in Google Calendar') }}</div></div>
+    <div><div class="dates">15.06 — 24.06.2026</div><div class="days">10 {{ _('days') }}</div></div>
+</div>
+<div class="vac-item">
+    <div class="vi-icon" style="background:var(--c-warning-bg);color:var(--c-warning)">⏳</div>
+    <div class="info"><div class="title">{{ _('Personal days') }}</div><div class="meta">{{ _('Pending approval · synced 12 min ago') }}</div></div>
+    <div><div class="dates">14.08 — 15.08.2026</div><div class="days">2 {{ _('days') }}</div></div>
+</div>
+<div class="vac-item">
+    <div class="vi-icon" style="background:#f3f1ec;color:var(--c-text-muted)">✓</div>
+    <div class="info"><div class="title">{{ _('Spring break') }}</div><div class="meta">{{ _('Completed') }}</div></div>
+    <div><div class="dates">07.04 — 10.04.2026</div><div class="days">4 {{ _('days') }}</div></div>
+</div>

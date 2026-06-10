@@ -6,7 +6,21 @@ from wtforms import DateField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Length, Optional, Regexp
 
 from app.db_types import uuid_or_none
+from app.forms_common import country_choices
 from app.vehicles.models import VEHICLE_TYPE_CHOICES
+
+
+def _blank_to_none(value: str | None) -> str | None:
+    """Empty/whitespace select value → ``None`` (registration country is optional)."""
+    if value is None:
+        return None
+    value = value.strip()
+    return value or None
+
+
+def _country_choices_optional() -> list[tuple[str, str]]:
+    """Country choices with a leading blank — registration country may be unknown."""
+    return [("", _l("— not set —"))] + country_choices()
 
 
 class VehicleForm(FlaskForm):
@@ -35,6 +49,13 @@ class VehicleForm(FlaskForm):
         coerce=uuid_or_none,
         validators=[DataRequired()],
     )
+    registration_country = SelectField(
+        _l("Country of registration"),
+        choices=_country_choices_optional,
+        validators=[Optional(), Length(max=3)],
+        filters=[_blank_to_none],
+    )
+    registration_date = DateField(_l("Registration date"), validators=[Optional()])
     acquisition_date = DateField(_l("Acquisition date"), validators=[Optional()])
     manufacture_date = DateField(_l("Manufacture date"), validators=[Optional()])
     submit = SubmitField(_l("Save"))

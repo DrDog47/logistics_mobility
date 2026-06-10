@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Settings') }} · {{ _('Mobility Payroll') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Settings') }}</h1>
+</header>
+
+<section class="panel panel--pad">
+    <div class="panel-header">
+        <div class="panel-title">{{ _('Google Calendar') }}</div>
+        <div class="panel-actions">
+            {% if google_configured %}
+            <a class="btn btn--primary btn--sm" href="{{ url_for('vacations.google_connect') }}">
+                {{ _('Reconnect') if account and account.token else _('Connect') }}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not google_configured %}
+    <div class="gcal-banner">
+        <div class="left">
+            <div class="gcal-icon">⚠️</div>
+            <div class="gcal-text">
+                <strong>{{ _('Google credentials not set') }}</strong>
+                <span>{{ _('Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in the environment, then reload.') }}</span>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <dl class="kv">
+        <dt>{{ _('Status') }}</dt>
+        <dd>
+            {% if account and account.token %}
+            <span class="badge badge--ok">{{ _('Connected') }}</span>
+            {% if account.account_email %} <span class="mono">{{ account.account_email }}</span>{% endif %}
+            {% else %}
+            <span class="badge badge--no_date">{{ _('Not connected') }}</span>
+            {% endif %}
+        </dd>
+
+        <dt>{{ _('Last sync') }}</dt>
+        <dd>{% if account and account.last_sync_at %}<span class="mono">{{ account.last_sync_at.strftime('%Y-%m-%d %H:%M') }}</span>{% else %}<span class="muted">—</span>{% endif %}</dd>
+
+        <dt>{{ _('Calendar for new leaves') }}</dt>
+        <dd><span class="mono">{{ push_calendar_id }}</span> <span class="muted">(GOOGLE_CALENDAR_ID)</span></dd>
+
+        <dt>{{ _('Embedded month-view calendar') }}</dt>
+        <dd>
+            {% if embed_id %}<span class="mono">{{ embed_id }}</span>
+            {% else %}<span class="muted">{{ _('not set') }}</span> <span class="muted">(GOOGLE_CALENDAR_EMBED_ID)</span>{% endif %}
+        </dd>
+    </dl>
+    <p class="muted settings-hint">{{ _('Leaves added to drivers are pushed to the calendar above; the fleet Vacations page embeds the month view. The embedded calendar must be public or shared so it renders for app users.') }}</p>
+    {% endif %}
+</section>
+{% endblock %}

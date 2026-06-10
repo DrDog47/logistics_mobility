@@ -82,6 +82,11 @@ class PrdStandardMixin:
         self.is_deleted = True
         self.deleted_at = datetime.now(UTC)
 
+    def restore(self) -> None:
+        """Reverse a soft delete, bringing the row back into active queries."""
+        self.is_deleted = False
+        self.deleted_at = None
+
 
 class UpdatedAtMixin:
     """Adds ``updated_at`` (PRD §3.1/§7.1 — only driver & organisation).

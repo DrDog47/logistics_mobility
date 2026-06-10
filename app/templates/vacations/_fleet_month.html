@@ -1,0 +1,112 @@
+{# Fleet month timeline (driver rows × day columns). Rendered both inside the
+   full page and on its own for HTMX month navigation, so it is self-contained
+   (defines its own kind/dow labels). Context: fleet. #}
+{% set kind_labels = {
+  'annual': _('Annual leave'), 'on_demand': _('On-demand leave'),
+  'sick': _('Sick leave (L4)'), 'unpaid': _('Unpaid leave'), 'other': _('Other')} %}
+{% set dow_labels = [_('Mo'), _('Tu'), _('We'), _('Th'), _('Fr'), _('Sa'), _('Su')] %}
+<section class="panel panel--pad">
+    <div class="panel-header">
+        {% set on_leave_count = fleet.rows | selectattr('segments') | list | length %}
+        <div class="panel-title">{{ _('Month view') }} <span class="muted">({{ _('%(n)d on leave', n=on_leave_count) }})</span></div>
+        {# Month navigation swaps this panel in place (HTMX) — no page reload.
+           Today sits left of the selector; the month/year is a picker for jumping
+           straight to any month. #}
+        <div class="panel-actions calendar-nav">
+            {% if fleet.month_date.strftime('%Y-%m') != fleet.this_month %}
+            <a class="btn btn--ghost btn--sm" role="button"
+               href="{{ url_for('vacations.calendar') }}"
+               hx-get="{{ url_for('vacations.calendar') }}"
+               hx-target="#fleet-month" hx-swap="innerHTML">{{ _('Today') }}</a>
+            {% endif %}
+            <a class="btn btn--ghost btn--sm" role="button" aria-label="{{ _('Previous month') }}"
+               href="{{ url_for('vacations.calendar', vac_month=fleet.prev_month) }}"
+               hx-get="{{ url_for('vacations.calendar', vac_month=fleet.prev_month) }}"
+               hx-target="#fleet-month" hx-swap="innerHTML">‹</a>
+            <input type="month" class="month-picker" name="vac_month"
+                   value="{{ fleet.month_date.strftime('%Y-%m') }}"
+                   aria-label="{{ _('Select month') }}" title="{{ _('Select month') }}"
+                   hx-get="{{ url_for('vacations.calendar') }}"
+                   hx-target="#fleet-month" hx-swap="innerHTML" hx-trigger="change">
+            <a class="btn btn--ghost btn--sm" role="button" aria-label="{{ _('Next month') }}"
+               href="{{ url_for('vacations.calendar', vac_month=fleet.next_month) }}"
+               hx-get="{{ url_for('vacations.calendar', vac_month=fleet.next_month) }}"
+               hx-target="#fleet-month" hx-swap="innerHTML">›</a>
+        </div>
+    </div>
+
+    {% if fleet.rows %}
+    <div class="vmonth">
+        {# header scale #}
+        <div class="vmonth-row vmonth-row--head">
+            <div class="vmonth-name"></div>
+            <div class="vmonth-scale">
+                {% for d in fleet.days %}
+                <div class="vmonth-day{% if d.weekend or d.holiday %} is-off{% endif %}{% if d.today %} is-today{% endif %}">
+                    <span class="vmonth-dnum">{{ d.day }}</span>
+                    <span class="vmonth-dow">{{ dow_labels[d.dow] }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {# one row per driver with leave this month #}
+        {% for row in fleet.rows %}
+        {% set drv = row.driver %}
+        <div class="vmonth-row">
+            <div class="vmonth-name">
+                <a href="{{ url_for('drivers.show_driver', driver_id=drv.uuid) }}" class="vmonth-name__link">
+                    <span class="avatar avatar--sm">{{ (drv.first_name[0] ~ drv.last_name[0]) | upper }}</span>
+                    <span class="vmonth-name__txt">{{ drv.full_name }}</span>
+                </a>
+            </div>
+            <div class="vmonth-track">
+                {% for d in fleet.days %}
+                <div class="vmonth-cell{% if d.weekend or d.holiday %} is-off{% endif %}{% if d.today %} is-today{% endif %}"></div>
+                {% endfor %}
+                {% for s in row.segments %}
+                {% set lbl = s.note or kind_labels.get(s.kind, s.kind) %}
+                <div class="vmonth-bar vmonth-bar--{{ s.kind }}{% if s.clipped_left %} clip-l{% endif %}{% if s.clipped_right %} clip-r{% endif %}"
+                     style="grid-column: {{ s.start_col }} / span {{ s.span }};"
+                     title="{{ lbl }} · {{ s.start_date.strftime('%d.%m.%Y') }} – {{ s.end_date.strftime('%d.%m.%Y') }} · {{ s.counted_days }}{{ _('d') }}">
+                    <span class="vmonth-bar__txt">{{ lbl }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {# Mobile fallback: stacked per-driver list (CSS swaps grid ↔ list ≤720px) #}
+    <div class="vmonth-list">
+        {% for row in fleet.rows %}
+        {% set drv = row.driver %}
+        <div class="vml-row{% if not row.segments %} is-empty{% endif %}">
+            <a href="{{ url_for('drivers.show_driver', driver_id=drv.uuid) }}" class="vml-name">
+                <span class="avatar avatar--sm">{{ (drv.first_name[0] ~ drv.last_name[0]) | upper }}</span>
+                <span class="vml-name__txt">{{ drv.full_name }}</span>
+            </a>
+            <div class="vml-chips">
+                {% for s in row.segments %}
+                {% set lbl = s.note or kind_labels.get(s.kind, s.kind) %}
+                <span class="vml-chip vml-chip--{{ s.kind }}"
+                      title="{{ lbl }} · {{ s.counted_days }}{{ _('d') }}">{{ s.start_date.strftime('%d.%m') }}–{{ s.end_date.strftime('%d.%m') }}</span>
+                {% else %}
+                <span class="vml-none">{{ _('No leave this month') }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="vac-legend">
+        <div class="item"><span class="sw" style="background:var(--c-success-bg);border:1px solid #c8e3d5"></span>{{ kind_labels['annual'] }}</div>
+        <div class="item"><span class="sw" style="background:#eef3ff;border:1px solid #b9ccf0"></span>{{ kind_labels['on_demand'] }}</div>
+        <div class="item"><span class="sw" style="background:#fdecea;border:1px solid #e6a8a0"></span>{{ kind_labels['sick'] }}</div>
+        <div class="item"><span class="sw" style="background:#f1eef6;border:1px solid #cdc2dd"></span>{{ kind_labels['unpaid'] }}</div>
+        <div class="item"><span class="sw" style="background:#fff;border:1.5px solid var(--c-accent)"></span>{{ _('Today') }}</div>
+    </div>
+    {% else %}
+    <p class="empty">{{ _('No active drivers yet.') }}</p>
+    {% endif %}
+</section>

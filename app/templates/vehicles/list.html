@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ _('Vehicles') }}{% endblock %}
+{% block title %}{{ _('Vehicles') }} · {{ _('Mobility Payroll') }}{% endblock %}
 
 {% block content %}
 <header class="page-head">
@@ -11,30 +11,80 @@
     {% endif %}
 </header>
 
-<section class="panel">
-    <table class="table">
-        <thead>
-            <tr>
-                <th>{{ _('Plate') }}</th>
-                <th>{{ _('Type') }}</th>
-                <th>{{ _('Brand / Model') }}</th>
-                <th>VIN</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for v in vehicles %}
-            <tr>
-                <td class="mono"><a href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.uuid) }}">{{ v.registration_plate }}</a></td>
-                <td><span class="pill pill--{{ v.vehicle_type }}">{{ v.vehicle_type }}</span></td>
-                <td>{{ v.brand }} {{ v.model }}</td>
-                <td class="mono">{{ v.vin }}</td>
-                <td class="row-actions"><a href="{{ url_for('vehicles.show_vehicle', vehicle_id=v.uuid) }}">{{ _('View') }}</a></td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" class="empty">{{ _('No vehicles registered yet') }}</td></tr>
+{# Fleet KPIs — no vacations (vehicles are not human); tractor/trailer counts and
+   "without registration certificate" replace the drivers' contract metrics. #}
+<section class="kpis">
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Total vehicles') }}</span>
+        <span class="kpi__value">{{ stats.total }}</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Tractors') }}</span>
+        <span class="kpi__value">{{ stats.tractors }}</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Trailers') }}</span>
+        <span class="kpi__value">{{ stats.trailers }}</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Without registration certificate') }}</span>
+        <span class="kpi__value {% if stats.without_tech_passport %}kpi__value--warn{% endif %}">{{ stats.without_tech_passport }}</span>
+        <span class="kpi__hint">{{ _('missing tech passport') }}</span>
+    </div>
+
+    {% if stats.expiring_docs %}
+    <details class="kpi kpi--dropdown">
+        <summary class="kpi__summary">
+            <span class="kpi__label">{{ _('Docs expiring') }}</span>
+            <span class="kpi__value kpi__value--warn">{{ stats.expiring_docs }}</span>
+            <span class="kpi__hint">{{ _('expiring soon or expired') }} ▾</span>
+        </summary>
+        <div class="kpi__menu">
+            {% for d in stats.expiring_list %}
+            <a class="kpi__menu-item" href="{{ url_for('vehicles.show_vehicle', vehicle_id=d.vehicle_id) }}">
+                <span class="kpi__menu-main">
+                    <span class="kpi__menu-name">{{ d.vehicle_name }}</span>
+                    <span class="kpi__menu-sub">{{ d.document_type }}{% if d.end_date %} · {{ d.end_date }}{% endif %}</span>
+                </span>
+                <span class="badge badge--{{ d.level }}">{{ d.label }}</span>
+            </a>
             {% endfor %}
-        </tbody>
-    </table>
+        </div>
+    </details>
+    {% else %}
+    <div class="kpi">
+        <span class="kpi__label">{{ _('Docs expiring') }}</span>
+        <span class="kpi__value">0</span>
+        <span class="kpi__hint">{{ _('expiring soon or expired') }}</span>
+    </div>
+    {% endif %}
 </section>
+
+<section class="panel">
+    <div class="panel__toolbar">
+        <input
+            type="search"
+            name="q"
+            value="{{ search }}"
+            placeholder="{{ _('Search by plate, VIN, brand, model...') }}"
+            class="input"
+            hx-get="{{ url_for('vehicles.list_vehicles') }}"
+            hx-trigger="input changed delay:300ms, keyup[key=='Enter']"
+            hx-target="#vehicles-table"
+            hx-swap="outerHTML"
+            autocomplete="off"
+        >
+    </div>
+
+    {% include "vehicles/_table.html" %}
+</section>
+
+{% if deleted_vehicles %}
+<header class="page-head page-head--sub">
+    <h2>{{ _('Deleted vehicles') }} <span class="muted">({{ deleted_vehicles | length }})</span></h2>
+</header>
+<section class="panel">
+    {% include "vehicles/_deleted_table.html" %}
+</section>
+{% endif %}
 {% endblock %}

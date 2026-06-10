@@ -82,6 +82,28 @@ def register_cli(app: Flask) -> None:
         db.session.commit()
         click.secho(f"Seeded {created} document type(s).", fg="green")
 
+    @app.cli.command("seed-holidays")
+    @click.option("--year", type=int, required=True, help="Calendar year, e.g. 2026")
+    @click.option("--country", default="PL", help="ISO 3166-1 alpha-2")
+    def seed_holidays(year: int, country: str) -> None:
+        """Populate public_holidays for a year (Polish statutory days)."""
+        from app.vacations.holidays import polish_holidays
+        from app.vacations.models import PublicHoliday
+
+        created = 0
+        for day, name in sorted(polish_holidays(year).items()):
+            exists = db.session.execute(
+                db.select(PublicHoliday).where(
+                    PublicHoliday.country == country, PublicHoliday.day == day
+                )
+            ).scalar_one_or_none()
+            if exists:
+                continue
+            db.session.add(PublicHoliday(country=country, day=day, name=name))
+            created += 1
+        db.session.commit()
+        click.secho(f"Seeded {created} holiday(s) for {country} {year}.", fg="green")
+
     @app.cli.command("seed-org")
     @click.option("--name", default="Default Sp. z o.o.", help="Company name")
     @click.option("--national-id", default="0000000000", help="NIP / national ID")

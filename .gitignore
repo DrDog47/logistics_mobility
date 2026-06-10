@@ -2,6 +2,7 @@
 .history/
 .env
 instance/*
+documents/
 **/__pycache__/
 *.pyc
 *.pyo

@@ -30,6 +30,8 @@ def create_app(config: type[Config] | None = None) -> Flask:
     _init_extensions(app)
     _init_rates_registry(app)
     _init_polish_params(app)
+    _init_requirements(app)
+    _init_recognizer(app)
     _register_blueprints(app)
     _register_locale_selector(app)
     _register_template_globals(app)
@@ -41,9 +43,17 @@ def create_app(config: type[Config] | None = None) -> Flask:
 
 def _register_template_globals(app: Flask) -> None:
     """Expose helpers used directly inside Jinja templates."""
+    from datetime import date
+
+    from app.documents.requirements import driver_completeness, vehicle_completeness
     from app.documents.status import document_status
+    from app.documents.validation import validate_recognition
 
     app.jinja_env.globals["document_status"] = document_status
+    app.jinja_env.globals["driver_completeness"] = driver_completeness
+    app.jinja_env.globals["vehicle_completeness"] = vehicle_completeness
+    app.jinja_env.globals["validate_recognition"] = validate_recognition
+    app.jinja_env.globals["today"] = date.today
 
 
 def _init_rates_registry(app: Flask) -> None:
@@ -58,6 +68,20 @@ def _init_polish_params(app: Flask) -> None:
     from app.tax.polish_params import init_polish_params
 
     init_polish_params(app)
+
+
+def _init_requirements(app: Flask) -> None:
+    """Load the driver document requirements ruleset (PRD §11–12) at startup."""
+    from app.documents.requirements import init_requirements
+
+    init_requirements(app)
+
+
+def _init_recognizer(app: Flask) -> None:
+    """Build the configured document recognizer (PRD §8.7) at startup."""
+    from app.documents.recognizer import init_recognizer
+
+    init_recognizer(app)
 
 
 def _init_logging(app: Flask) -> None:
@@ -86,7 +110,9 @@ def _register_blueprints(app: Flask) -> None:
     from app.main.routes import bp as main_bp
     from app.organisations.routes import bp as organisations_bp
     from app.rates.routes import bp as rates_bp
+    from app.settings.routes import bp as settings_bp
     from app.trips.routes import bp as trips_bp
+    from app.vacations.routes import bp as vacations_bp
     from app.vehicles.routes import bp as vehicles_bp
 
     app.register_blueprint(main_bp)
@@ -97,6 +123,8 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(documents_bp)
     app.register_blueprint(trips_bp, url_prefix="/trips")
     app.register_blueprint(rates_bp, url_prefix="/rates")
+    app.register_blueprint(vacations_bp)
+    app.register_blueprint(settings_bp)
     # NOTE: payroll blueprint is intentionally not registered for now —
     # the payroll module is parked while the document system is built out.
 
@@ -112,6 +140,11 @@ def _select_locale() -> str:
     # Previously chosen
     if (lang := session.get("language")) in ("pl", "en", "ru"):
         return lang
+
+    # First visit: best match from the browser's Accept-Language header
+    best = request.accept_languages.best_match(("pl", "ru", "en"))
+    if best:
+        return best
 
     # Fall back to config default (pl)
     from flask import current_app

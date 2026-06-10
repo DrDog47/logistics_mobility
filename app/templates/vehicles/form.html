@@ -39,10 +39,18 @@
             {% for e in form.organisation_uuid.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
         <div class="field">
-            {{ form.acquisition_date.label }}{{ form.acquisition_date(class="input") }}
+            {{ form.registration_country.label }}{{ form.registration_country(class="input") }}
+            {% for e in form.registration_country.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
         </div>
         <div class="field">
-            {{ form.manufacture_date.label }}{{ form.manufacture_date(class="input") }}
+            {{ form.registration_date.label }}{{ form.registration_date(class="input", type="date") }}
+            {% for e in form.registration_date.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.acquisition_date.label }}{{ form.acquisition_date(class="input", type="date") }}
+        </div>
+        <div class="field">
+            {{ form.manufacture_date.label }}{{ form.manufacture_date(class="input", type="date") }}
         </div>
         <div class="form-grid__actions">
             <a class="btn btn--ghost" href="{{ url_for('vehicles.list_vehicles') }}">{{ _('Cancel') }}</a>

@@ -1,0 +1,177 @@
+{# Vacations & Schedule — real, data-driven panel (3-column: stats / calendar /
+   upcoming). Context: vac (build_panel_context), leave_form, entitlement_form, driver. #}
+{% set b = vac.balance %}
+{% set month_str = "%04d-%02d"|format(vac.year, vac.month) %}
+{% set kind_labels = {
+  'annual': _('Annual leave'), 'on_demand': _('On-demand leave'),
+  'sick': _('Sick leave (L4)'), 'unpaid': _('Unpaid leave'), 'other': _('Other')} %}
+{% set kind_icons = {
+  'annual': '🏖', 'on_demand': '⏳', 'sick': '🤒', 'unpaid': '✈️', 'other': '📌'} %}
+
+<div class="panel-header">
+    <div class="panel-title">{{ _('Vacations & Schedule') }}</div>
+    <div class="panel-actions">
+        <form method="post" action="{{ url_for('vacations.sync_now', driver_id=driver.uuid) }}" class="inline-form">
+            <input type="hidden" name="vac_month" value="{{ month_str }}">
+            <button class="btn btn--ghost btn--sm" type="submit" {{ '' if vac.connected else 'disabled' }}>{{ _('Sync now') }}</button>
+        </form>
+        <a class="btn btn--primary btn--sm" href="#leave-add">+ {{ _('Request leave') }}</a>
+    </div>
+</div>
+
+<div class="vac-grid">
+
+    {# ---------------- LEFT: connection + balances ---------------- #}
+    <aside class="vac-side">
+        <div class="gcal-card {{ 'is-on' if vac.connected else 'is-off' }}">
+            <div class="gcal-icon">📅</div>
+            <div class="gcal-text">
+                {% if vac.connected %}
+                <strong>{{ _('Google Calendar connected') }}</strong>
+                <span>{% if vac.last_sync_at %}{{ _('last sync') }} {{ vac.last_sync_at.strftime('%Y-%m-%d %H:%M') }}{% else %}{{ vac.account_email or '—' }}{% endif %}</span>
+                {% else %}
+                <strong>{{ _('Not connected') }}</strong>
+                <span>{{ _('Connect to sync leaves.') }}</span>
+                {% endif %}
+            </div>
+            {% if current_user.is_admin %}
+            <a class="gcal-card__link" href="{{ url_for('settings.index') }}">{{ _('Settings') }}</a>
+            {% endif %}
+        </div>
+
+        <div class="vac-card">
+            <div class="vac-card__head">{{ _('Annual leave') }} {{ vac.year }}</div>
+            <div class="vac-card__label">{{ _('Remaining') }}</div>
+            <div class="vac-card__big {{ 'is-neg' if b.remaining < 0 else '' }}">
+                {{ b.remaining }} <span class="vac-card__of">/ {{ b.entitled }}</span>
+            </div>
+            <div class="vac-card__sub">{{ _('%(n)d used', n=b.used) }}{% if b.entitlement and b.entitlement.carried_over_days %} · {{ _('%(n)d carried over', n=b.entitlement.carried_over_days) }}{% endif %}</div>
+        </div>
+
+        <div class="vac-card">
+            <div class="vac-card__head">{{ _('Sick leave (L4)') }}</div>
+            <div class="vac-card__big vac-card__big--sick">{{ b.sick_used }}</div>
+            <div class="vac-card__sub">{{ _('days this year · no limit') }}</div>
+        </div>
+    </aside>
+
+    {# ---------------- CENTER: calendar ---------------- #}
+    <div class="vac-main">
+        <div class="calendar-head">
+            <div class="calendar-title">{{ vac.month_date.strftime('%B %Y') }}</div>
+            {# Month navigation swaps the panel in place (HTMX) — no page reload. #}
+            <div class="calendar-nav">
+                <a class="btn btn--ghost btn--sm" role="button" href="{{ url_for('drivers.show_driver', driver_id=driver.uuid, vac_month=vac.prev_month, _anchor='tab-vacations') }}"
+                   hx-get="{{ url_for('vacations.panel', driver_id=driver.uuid, vac_month=vac.prev_month) }}"
+                   hx-target="#driver-vacations-panel" hx-swap="innerHTML">‹</a>
+                <a class="btn btn--ghost btn--sm" role="button" href="{{ url_for('drivers.show_driver', driver_id=driver.uuid, vac_month=vac.next_month, _anchor='tab-vacations') }}"
+                   hx-get="{{ url_for('vacations.panel', driver_id=driver.uuid, vac_month=vac.next_month) }}"
+                   hx-target="#driver-vacations-panel" hx-swap="innerHTML">›</a>
+            </div>
+        </div>
+
+        <div class="calendar">
+            <div class="cal-dow">{{ _('Mon') }}</div><div class="cal-dow">{{ _('Tue') }}</div>
+            <div class="cal-dow">{{ _('Wed') }}</div><div class="cal-dow">{{ _('Thu') }}</div>
+            <div class="cal-dow">{{ _('Fri') }}</div><div class="cal-dow">{{ _('Sat') }}</div><div class="cal-dow">{{ _('Sun') }}</div>
+            {% for week in vac.weeks %}
+                {% for d in week %}
+                <div class="cal-day
+                    {%- if not d.in_month %} muted{% endif %}
+                    {%- if d.weekend %} weekend{% endif %}
+                    {%- if d.today %} today{% endif %}
+                    {%- if d.kind in ('annual', 'on_demand') %} vacation
+                    {%- elif d.kind == 'sick' %} sick
+                    {%- elif d.kind %} leave-other{% endif %}">
+                    {{ d.day }}{% if d.kind %}<div class="ev-dot"></div>{% endif %}
+                </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+
+        <div class="vac-legend">
+            <div class="item"><span class="sw" style="background:var(--c-success-bg);border:1px solid #c8e3d5"></span>{{ _('Vacation') }}</div>
+            <div class="item"><span class="sw" style="background:#fdecea;border:1px solid #e6a8a0"></span>{{ _('Sick (L4)') }}</div>
+            <div class="item"><span class="sw" style="background:#faf8f3;border:1px solid var(--c-border)"></span>{{ _('Weekend') }}</div>
+            <div class="item"><span class="sw" style="background:#fff;border:1.5px solid var(--c-accent)"></span>{{ _('Today') }}</div>
+        </div>
+    </div>
+
+    {# ---------------- RIGHT: upcoming & recent ---------------- #}
+    <aside class="vac-rail">
+        <div class="vac-list-title">{{ _('Upcoming & recent') }}</div>
+        {% for e in vac.entries %}
+        {% set ended = e.end_date < today() %}
+        {% set ongoing = (e.start_date <= today() and e.end_date >= today()) %}
+        {% set status = _('Completed') if ended else (_('In progress') if ongoing else _('Upcoming')) %}
+        {% set src = _('Google Calendar') if e.source.value == 'google_calendar' else _('manual') %}
+        {# Click a leave to expand its inline editor (edit type/dates/note or delete). #}
+        <details class="vac-entry">
+            <summary class="vac-entry__sum vac-item vac-item--{{ e.kind.value }}{{ ' is-done' if ended else '' }}">
+                <div class="vi-icon">{{ kind_icons.get(e.kind.value, '📌') }}</div>
+                <div class="info">
+                    <div class="title">{{ e.note or kind_labels.get(e.kind.value, e.kind.value) }}</div>
+                    <div class="meta">{{ e.start_date.strftime('%d.%m') }} — {{ e.end_date.strftime('%d.%m.%Y') }} · {{ status }} · {{ src }}</div>
+                </div>
+                <div class="vac-item__end">
+                    <span class="vac-days">{{ e.counted_days }}{{ _('d') }}</span>
+                    <span class="vac-edit-ico" title="{{ _('Edit') }}" aria-hidden="true">✎</span>
+                </div>
+            </summary>
+            <form method="post" action="{{ url_for('vacations.edit_leave', driver_id=driver.uuid, entry_id=e.uuid) }}" class="vac-edit">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="vac_month" value="{{ month_str }}">
+                <label>{{ _('Type') }}
+                    <select class="input" name="kind">
+                        {% for val, label in leave_form.kind.choices %}
+                        <option value="{{ val }}" {% if e.kind.value == val %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>{{ _('Start date') }}<input class="input" type="date" name="start_date" value="{{ e.start_date.isoformat() }}"></label>
+                <label>{{ _('End date') }}<input class="input" type="date" name="end_date" value="{{ e.end_date.isoformat() }}"></label>
+                <label>{{ _('Note') }}<input class="input" name="note" value="{{ e.note or '' }}"></label>
+                <div class="vac-edit__actions">
+                    <button class="btn btn--primary btn--sm" type="submit">{{ _('Save changes') }}</button>
+                    <button class="vac-edit__del btn btn--ghost btn--sm" type="submit"
+                            formaction="{{ url_for('vacations.delete_leave', driver_id=driver.uuid, entry_id=e.uuid) }}"
+                            formnovalidate
+                            onclick="return confirm('{{ _('Delete this leave?') }}')">{{ _('Delete') }}</button>
+                </div>
+            </form>
+        </details>
+        {% else %}
+        <p class="muted">{{ _('No leaves recorded for this year yet.') }}</p>
+        {% endfor %}
+    </aside>
+</div>
+
+{# ---------------- Forms (full width, below) ---------------- #}
+<div class="vac-forms">
+    <details class="vac-form" id="leave-add">
+        <summary>+ {{ _('Add leave') }}</summary>
+        <form method="post" action="{{ url_for('vacations.add_leave', driver_id=driver.uuid) }}" class="vac-form__grid">
+            {{ leave_form.hidden_tag() }}
+            <input type="hidden" name="vac_month" value="{{ month_str }}">
+            <label>{{ _('Type') }}{{ leave_form.kind(class="input") }}</label>
+            <label>{{ _('Start date') }}{{ leave_form.start_date(class="input", type="date") }}</label>
+            <label>{{ _('End date') }}{{ leave_form.end_date(class="input", type="date") }}</label>
+            <label>{{ _('Note') }}{{ leave_form.note(class="input") }}</label>
+            <button class="btn btn--primary btn--sm" type="submit">{{ _('Save') }}</button>
+        </form>
+    </details>
+
+    {% if current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
+    <details class="vac-form">
+        <summary>{{ _('Edit entitlement') }} ({{ vac.year }})</summary>
+        <form method="post" action="{{ url_for('vacations.set_entitlement', driver_id=driver.uuid) }}" class="vac-form__grid">
+            {{ entitlement_form.hidden_tag() }}
+            <input type="hidden" name="vac_month" value="{{ month_str }}">
+            <label>{{ _('Base days') }}{{ entitlement_form.base_days(class="input") }}</label>
+            <label>{{ _('Carried over') }}{{ entitlement_form.carried_over_days(class="input") }}</label>
+            <label>{{ _('Adjustment (±)') }}{{ entitlement_form.adjustment_days(class="input") }}</label>
+            <button class="btn btn--primary btn--sm" type="submit">{{ _('Save') }}</button>
+        </form>
+    </details>
+    {% endif %}
+</div>

@@ -17,7 +17,9 @@ from decimal import Decimal
 
 import pytest
 
-from app.drivers.models import ContractType, Driver, DriverContract
+from app.documents.constants import ENTITY_DRIVER
+from app.documents.models import DocumentType, DriverDocument
+from app.drivers.models import ContractType, Driver
 from app.extensions import db
 from app.payroll.calculator import calculate
 from app.payroll.models import PayrollLineType, PayrollPeriod, PayrollStatus
@@ -47,14 +49,24 @@ def _make_setup(base_salary_pln: Decimal):
     )
     db.session.add(driver)
     db.session.flush()
+    if not db.session.execute(
+        db.select(DocumentType).where(
+            DocumentType.type == "employment", DocumentType.entity_type == ENTITY_DRIVER
+        )
+    ).scalar_one_or_none():
+        db.session.add(DocumentType(type="employment", entity_type=ENTITY_DRIVER, label="Employment"))
+        db.session.flush()
     db.session.add(
-        DriverContract(
-            driver_id=driver.id,
-            contract_type=ContractType.UMOWA_O_PRACE,
+        DriverDocument(
+            driver_uuid=driver.uuid,
+            document_type="employment",
             start_date=date(2024, 1, 1),
             end_date=None,
-            base_salary_pln=base_salary_pln,
-            hours_norm=168,
+            extra={
+                "contract_type": ContractType.UMOWA_O_PRACE.value,
+                "base_salary_pln": str(base_salary_pln),
+                "hours_norm": 168,
+            },
         )
     )
     vehicle = Vehicle(plate="TST 99999", vehicle_type=VehicleType.TRUCK)

@@ -96,4 +96,43 @@
         </div>
     </form>
 </section>
+
+{% if not driver %}
+{# A driver can be created manually (above) OR from documents (below). #}
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('… or create from documents') }}</h2>
+    </header>
+    <p class="flash flash--info">
+        {{ _('Start with the passport: recognise and save it first — that creates the driver. The passport must be among the uploaded files; only then can the remaining documents be attached. Upload the passport, recognise it, then add the rest.') }}
+    </p>
+    {% set dz_id = 'dz-new-driver' %}
+    {% set dz_title = _('Drag the passport (and other documents) here') %}
+    {% set dz_refresh = true %}
+    {% include "documents/_dropzone.html" %}
+</section>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Files awaiting recognition') }}</h2>
+    </header>
+    <div id="inbox-files"
+         hx-get="{{ url_for('documents.inbox_files') }}"
+         hx-trigger="load, inboxChanged from:body"
+         hx-swap="innerHTML">
+    </div>
+    <p id="inbox-spinner" class="muted htmx-indicator">{{ _('Recognizing…') }}</p>
+</section>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Confirm & save') }}</h2>
+    </header>
+    <p class="muted">
+        {{ _('Recognise the passport first to create the driver, then the remaining documents. A non-passport saved before the passport stays in the inbox until the driver exists.') }}
+    </p>
+    <div id="confirm-entries"></div>
+    <p class="confirm-empty muted">{{ _('Nothing to confirm yet — recognise a file above.') }}</p>
+</section>
+{% endif %}
 {% endblock %}

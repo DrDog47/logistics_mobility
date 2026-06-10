@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Vacation calendar') }} · {{ _('Mobility Payroll') }}{% endblock %}
+
+{% block content %}
+{% set kind_labels = {
+  'annual': _('Annual leave'), 'on_demand': _('On-demand leave'),
+  'sick': _('Sick leave (L4)'), 'unpaid': _('Unpaid leave'), 'other': _('Other')} %}
+
+<header class="page-head">
+    <h1>{{ _('Vacation calendar') }}</h1>
+</header>
+
+{# --- Who is on leave today (from platform data) --- #}
+<section class="panel panel--pad">
+    <div class="panel-header">
+        <div class="panel-title">{{ _('On leave today') }} <span class="muted">({{ on_leave|length }})</span></div>
+        <div class="panel-actions"><span class="muted mono">{{ today }}</span></div>
+    </div>
+    {% if on_leave %}
+    <div class="onleave-list">
+        {% for it in on_leave %}
+        <a class="onleave-item" href="{{ url_for('drivers.show_driver', driver_id=it.driver.uuid) }}">
+            <span class="avatar avatar--sm">{{ (it.driver.first_name[0] ~ it.driver.last_name[0]) | upper }}</span>
+            <span class="onleave-name">{{ it.driver.full_name }}</span>
+            <span class="badge badge--{{ 'soon' if it.kind.value == 'sick' else 'ok' }}">{{ kind_labels.get(it.kind.value, it.kind.value) }}</span>
+            <span class="muted mono onleave-until">{{ _('until') }} {{ it.end_date }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty">{{ _('Nobody is on leave today.') }}</p>
+    {% endif %}
+</section>
+
+{# --- Own-style month timeline — swapped in place on month navigation (HTMX) --- #}
+<div id="fleet-month">
+    {% include "vacations/_fleet_month.html" %}
+</div>
+{% endblock %}

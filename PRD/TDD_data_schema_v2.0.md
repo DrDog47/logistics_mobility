@@ -22,6 +22,7 @@
 |----------|------|-----------|
 | `67930e7cce7a` | `initial_postgres_prd_schema` | Базовая схема: organisation, users, drivers, vehicles, документы, контракты, рейсы, курсы |
 | `a1b2c3d4e5f6` | `document_type_catalogue` | Каталог `document_type`, составной FK, `file_link → file_links` (JSONB-массив) |
+| `e5f6a7b8c9d0` | `driver_file_table` | Таблица `driver_file` (1-ко-многим), перенос `driver_document.file_links` в строки, удаление колонки |
 
 ---
 
@@ -397,8 +398,8 @@ CREATE TABLE driver_document (
     document_id   VARCHAR(100),
     start_date    DATE,
     end_date      DATE,
-    file_links    JSONB,                                    -- массив ссылок на сканы
     extra         JSONB,
+    -- Файлы документа вынесены в отдельную таблицу driver_file (см. §8a).
 
     driver_uuid   UUID          NOT NULL
 );
@@ -424,9 +425,10 @@ CREATE INDEX ix_driver_document_driver_uuid   ON driver_document (driver_uuid);
 | 7 | `document_id` | `VARCHAR(100)` | nullable | Номер документа (может отсутствовать) |
 | 8 | `start_date` | `DATE` | nullable | Начало действия |
 | 9 | `end_date` | `DATE` | nullable | Окончание действия |
-| 10 | `file_links` | `JSONB` | nullable | **Массив** ссылок на сканы (Google Drive и т. п.) |
-| 11 | `extra` | `JSONB` | nullable | Атрибуты, специфичные для типа документа |
-| 12 | `driver_uuid` | `UUID` | `NOT NULL, FK → drivers` | Водитель-владелец |
+| 10 | `extra` | `JSONB` | nullable | Атрибуты, специфичные для типа документа |
+| 11 | `driver_uuid` | `UUID` | `NOT NULL, FK → drivers` | Водитель-владелец |
+
+> Файлы документа (сканы) хранятся в отдельной таблице **`driver_file`** (один-ко-многим, §8a), а не массивом `file_links`. У `vehicle_document` массив `file_links JSONB` пока сохранён (§9).
 
 ### 8.3. Допустимые ключи `extra` по типам
 
@@ -443,9 +445,59 @@ CREATE INDEX ix_driver_document_driver_uuid   ON driver_document (driver_uuid);
 
 ### 8.4. Примечания
 
-- `file_link TEXT` (v1.0) заменён на `file_links JSONB` — у документа может быть несколько сканов.
+- Файлы документа вынесены из массива `file_links JSONB` (v2.0) в отдельную таблицу `driver_file` (§8a) — один документ ↔ много файлов, у каждого файла своя распознанная мета.
 - Составной FK `(document_type, entity_type) → document_type(type, entity_type)` гарантирует, что в документ нельзя записать тип, отсутствующий в каталоге для нужной сущности.
 - `ON DELETE RESTRICT` на `driver_uuid`: физическое удаление водителя заблокировано, пока есть документы (страховка поверх мягкого удаления).
+
+---
+
+## 8a. Таблица `driver_file` — Файлы документа водителя
+
+Физические файлы (сканы), относящиеся к одному `driver_document` (один-ко-многим). Drag-n-drop добавляет в документ один или несколько файлов; каждому файлу соответствует строка `driver_file`. PRD-стандартная таблица.
+
+### 8a.1. DDL
+
+```sql
+CREATE TABLE driver_file (
+    uuid          UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at    TIMESTAMPTZ   NOT NULL DEFAULT NOW(),
+    deleted_at    TIMESTAMPTZ,
+    is_deleted    BOOLEAN       NOT NULL DEFAULT FALSE,
+
+    document_type VARCHAR(30),                              -- если распознан
+    document_id   VARCHAR(100),                             -- если распознан
+    start_date    DATE,                                     -- если распознана
+    end_date      DATE,                                     -- если распознана
+    file_link     TEXT          NOT NULL,                   -- место хранения файла
+    extra         JSONB,                                    -- распознанные атрибуты файла
+
+    document_uuid UUID          NOT NULL
+);
+
+ALTER TABLE driver_file ADD CONSTRAINT fk_driver_file_document
+    FOREIGN KEY (document_uuid) REFERENCES driver_document (uuid) ON DELETE CASCADE;
+
+CREATE INDEX ix_driver_file_document_uuid ON driver_file (document_uuid);
+```
+
+### 8a.2. Описание полей
+
+| # | Поле | Тип | Ограничения | Описание |
+|---|------|-----|-------------|----------|
+| 1–4 | стандартный набор PRD | | | uuid / created_at / deleted_at / is_deleted |
+| 5 | `document_type` | `VARCHAR(30)` | nullable | Тип документа, распознанный по файлу (если определился) |
+| 6 | `document_id` | `VARCHAR(100)` | nullable | Номер документа (если определился) |
+| 7 | `start_date` | `DATE` | nullable | Начало действия (если определилось) |
+| 8 | `end_date` | `DATE` | nullable | Окончание действия (если определилось) |
+| 9 | `file_link` | `TEXT` | `NOT NULL` | Место хранения файла (относительный путь / URL) |
+| 10 | `extra` | `JSONB` | nullable | Распознанные атрибуты файла без жёсткой структуры |
+| 11 | `document_uuid` | `UUID` | `NOT NULL, FK → driver_document` | Документ-владелец (1-ко-многим) |
+
+### 8a.3. Примечания
+
+- **Документ создаётся вместе с первым файлом.** Если при распознавании тип файла определён, а документа ещё нет — при записи файла сначала создаётся `driver_document`, затем его `uuid` подставляется в `driver_file.document_uuid` (в рамках одной транзакции Postgres).
+- **Нет `document_uuid` — нет строки.** Если файлу не удаётся присвоить документ (не определены водитель или документ автоматически), файл **остаётся в `_Inbox/` для ручной обработки** и строка `driver_file` не создаётся (`document_uuid NOT NULL`).
+- `ON DELETE CASCADE`: файлы — собственность документа; физическое удаление документа удаляет его файлы. Мягкое удаление (`is_deleted`) — основной режим.
 
 ---
 
@@ -715,6 +767,8 @@ drivers (1) ──< driver_document           (driver_uuid, RESTRICT)
 drivers (1) ──< trips                     (driver_id,  RESTRICT)
 drivers (1) ──< payroll_periods*          (driver_id,  RESTRICT)
 
+driver_document (1) ──< driver_file       (document_uuid, CASCADE)
+
 vehicles (1) ──< vehicle_document         (vehicle_uuid, RESTRICT)
 vehicles (1) ──< trips                    (vehicle_id,  SET NULL, nullable)
 
@@ -739,7 +793,7 @@ payroll_periods* (1) ──< payroll_lines*   (period_id, CASCADE)
 | 1 | Имена таблиц | `driver`, `vehicle` | `drivers`, `vehicles` (мн. число) |
 | 2 | Поля водителя | `name`, `surname` | `first_name`, `last_name` |
 | 3 | Водитель: новые колонки | `pesel`/`phone`/`notes` в `extra` | вынесены в колонки + добавлены `passport_number`, `tachograph_card_number`, `hire_date`, `termination_date`, `is_active` |
-| 4 | Документы: файлы | `file_link TEXT` (одна ссылка) | `file_links JSONB` (массив ссылок) |
+| 4 | Документы водителя: файлы | `file_link TEXT` (одна ссылка) → `file_links JSONB` (массив) | отдельная таблица `driver_file` (1-ко-многим, своя мета у файла); `vehicle_document.file_links` пока сохранён |
 | 5 | Каталог типов | хардкод-перечень в коде | таблица `document_type` (операторо-редактируемая) + `entity_type`-дискриминатор и составной FK |
 | 6 | Новые сущности | — | `users`, `driver_contracts`, `trips`, `trip_segments`, `nbp_rates`, `country_rate_snapshots` (+ планируемые `payroll_*`) |
 | 7 | UUID / JSONB | только Postgres | портируемые типы: Postgres (prod) + SQLite (тесты) |
@@ -753,7 +807,7 @@ payroll_periods* (1) ──< payroll_lines*   (period_id, CASCADE)
 | # | Вопрос | Решение |
 |---|--------|---------|
 | 1 | Справочник типов документов отдельной таблицей? | ✅ Да — добавлена таблица `document_type` (v2.0), составной FK из документов |
-| 2 | Хранить несколько сканов на документ? | ✅ Да — `file_links JSONB` (массив) вместо одиночного `file_link` |
+| 2 | Хранить несколько сканов на документ? | ✅ Да — для водителя отдельная таблица `driver_file` (1-ко-многим), у каждого файла своя распознанная мета (§8a); `vehicle_document` пока хранит массив `file_links JSONB` |
 | 3 | Договоры водителя в схеме? | ✅ Да — таблица `driver_contracts` (история, один-ко-многим) |
 | 4 | Учёт рейсов и Mobility Package? | ✅ Да — `trips` + `trip_segments` с классификацией сегментов |
 | 5 | Воспроизводимость расчётов ЗП? | ✅ Да — кэш `nbp_rates` и append-only `country_rate_snapshots` |
