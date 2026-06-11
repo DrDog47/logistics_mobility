@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 
-from app.documents.constants import ENTITY_VEHICLE, UNTRACKED_TYPES
+from app.docs.constants import ENTITY_VEHICLE, UNTRACKED_TYPES
 
 # Status levels (also used as CSS badge modifiers: badge--<level>).
 OK = "ok"

@@ -25,7 +25,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db_types import JsonB, PrdStandardMixin, UuidType
-from app.documents.constants import ENTITY_DRIVER, ENTITY_VEHICLE
+from app.docs.constants import ENTITY_DRIVER, ENTITY_VEHICLE
 from app.extensions import db
 
 

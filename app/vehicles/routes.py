@@ -10,9 +10,9 @@ from flask_babel import gettext as _
 from flask_login import login_required
 
 from app.auth.routes import role_required
-from app.documents.constants import ENTITY_VEHICLE
-from app.documents.models import VehicleDocument
-from app.documents.status import CRITICAL, EXPIRED, SOON, URGENT, document_status
+from app.docs.constants import ENTITY_VEHICLE
+from app.docs.models import VehicleDocument
+from app.docs.status import CRITICAL, EXPIRED, SOON, URGENT, document_status
 from app.extensions import db
 from app.models.user import Role
 from app.organisations.models import Organisation

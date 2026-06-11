@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from app.documents.pipeline import (
+from app.docs.pipeline import (
     RecognizedFile,
     inbox_has_pending_trigger,
     is_trigger,
@@ -16,8 +16,8 @@ from app.documents.pipeline import (
     sort_passports_first,
     sort_triggers_first,
 )
-from app.documents.recognizer import RecognitionResult
-from app.documents.services import inbox_dir
+from app.docs.recognizer import RecognitionResult
+from app.docs.services import inbox_dir
 
 
 def _rf(name: str, doc_type: str | None) -> RecognizedFile:

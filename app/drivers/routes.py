@@ -16,8 +16,8 @@ from flask_babel import gettext as _
 from flask_login import login_required
 
 from app.auth.routes import role_required
-from app.documents.models import DriverDocument
-from app.documents.status import CRITICAL, EXPIRED, SOON, URGENT, document_status
+from app.docs.models import DriverDocument
+from app.docs.status import CRITICAL, EXPIRED, SOON, URGENT, document_status
 from app.drivers.contracts import EMPLOYMENT_DOC_TYPE
 from app.drivers.forms import DriverContractForm, DriverForm
 from app.drivers.models import Driver

@@ -19,7 +19,7 @@ from typing import TYPE_CHECKING
 from app.drivers.models import ContractType
 
 if TYPE_CHECKING:
-    from app.documents.models import DriverDocument
+    from app.docs.models import DriverDocument
     from app.drivers.models import Driver
 
 # The document_type code that represents an employment contract.

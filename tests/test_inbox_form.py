@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import date
 
-from app.documents.routes import _entries_from_form
+from app.docs.routes import _entries_from_form
 
 
 def test_entries_from_form_parses_and_skips():

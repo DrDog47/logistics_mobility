@@ -45,9 +45,9 @@ def _register_template_globals(app: Flask) -> None:
     """Expose helpers used directly inside Jinja templates."""
     from datetime import date
 
-    from app.documents.requirements import driver_completeness, vehicle_completeness
-    from app.documents.status import document_status
-    from app.documents.validation import validate_recognition
+    from app.docs.requirements import driver_completeness, vehicle_completeness
+    from app.docs.status import document_status
+    from app.docs.validation import validate_recognition
 
     app.jinja_env.globals["document_status"] = document_status
     app.jinja_env.globals["driver_completeness"] = driver_completeness
@@ -72,14 +72,14 @@ def _init_polish_params(app: Flask) -> None:
 
 def _init_requirements(app: Flask) -> None:
     """Load the driver document requirements ruleset (PRD §11–12) at startup."""
-    from app.documents.requirements import init_requirements
+    from app.docs.requirements import init_requirements
 
     init_requirements(app)
 
 
 def _init_recognizer(app: Flask) -> None:
     """Build the configured document recognizer (PRD §8.7) at startup."""
-    from app.documents.recognizer import init_recognizer
+    from app.docs.recognizer import init_recognizer
 
     init_recognizer(app)
 
@@ -105,7 +105,7 @@ def _init_extensions(app: Flask) -> None:
 
 def _register_blueprints(app: Flask) -> None:
     from app.auth.routes import bp as auth_bp
-    from app.documents.routes import bp as documents_bp
+    from app.docs.routes import bp as documents_bp
     from app.drivers.routes import bp as drivers_bp
     from app.main.routes import bp as main_bp
     from app.organisations.routes import bp as organisations_bp

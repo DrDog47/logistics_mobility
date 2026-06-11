@@ -5,14 +5,14 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-from app.documents.constants import ENTITY_DRIVER
-from app.documents.models import DocumentType, DriverDocument, DriverFile
-from app.documents.persistence import apply_recognized
-from app.documents.pipeline import RecognizedFile
-from app.documents.services import inbox_dir, resolve_stored_file
+from app.docs.constants import ENTITY_DRIVER
+from app.docs.models import DocumentType, DriverDocument, DriverFile
+from app.docs.persistence import apply_recognized
+from app.docs.pipeline import RecognizedFile
+from app.docs.services import inbox_dir, resolve_stored_file
 from app.drivers.models import Driver
 from app.extensions import db
-from app.documents.recognizer import RecognitionResult
+from app.docs.recognizer import RecognitionResult
 
 _MIME = {"pdf": "application/pdf", "png": "image/png", "jpg": "image/jpeg"}
 

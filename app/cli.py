@@ -61,8 +61,8 @@ def register_cli(app: Flask) -> None:
     @app.cli.command("seed-document-types")
     def seed_document_types() -> None:
         """Populate the document_type catalogue from the base constant lists."""
-        from app.documents.constants import BASE_DOCUMENT_TYPES
-        from app.documents.models import DocumentType
+        from app.docs.constants import BASE_DOCUMENT_TYPES
+        from app.docs.models import DocumentType
 
         created = 0
         for entity_type, entries in BASE_DOCUMENT_TYPES.items():

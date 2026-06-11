@@ -9,8 +9,8 @@ from werkzeug.datastructures import FileStorage
 from werkzeug.security import safe_join
 from werkzeug.utils import secure_filename
 
-from app.documents.constants import BASE_DOCUMENT_TYPES
-from app.documents.models import DocumentType, DriverDocument, DriverFile
+from app.docs.constants import BASE_DOCUMENT_TYPES
+from app.docs.models import DocumentType, DriverDocument, DriverFile
 from app.extensions import db
 
 

@@ -22,21 +22,21 @@ from flask_babel import gettext as _
 from flask_login import login_required
 
 from app.auth.routes import role_required
-from app.documents.constants import ENTITY_DRIVER, ENTITY_VEHICLE
-from app.documents.forms import (
+from app.docs.constants import ENTITY_DRIVER, ENTITY_VEHICLE
+from app.docs.forms import (
     DocumentTypeForm,
     DriverDocumentForm,
     DriverFileForm,
     VehicleDocumentForm,
 )
-from app.documents.models import (
+from app.docs.models import (
     DocumentType,
     DriverDocument,
     DriverFile,
     VehicleDocument,
 )
-from app.documents.persistence import apply_recognized
-from app.documents.pipeline import (
+from app.docs.persistence import apply_recognized
+from app.docs.pipeline import (
     TRIGGER_TYPES,
     RecognizedFile,
     inbox_has_pending_trigger,
@@ -47,15 +47,15 @@ from app.documents.pipeline import (
     recognize_inbox,
     sort_triggers_first,
 )
-from app.documents.recognizer import RecognitionResult
-from app.documents.services import (
+from app.docs.recognizer import RecognitionResult
+from app.docs.services import (
     document_type_choices,
     parse_file_links,
     resolve_stored_file,
     save_uploads_to_inbox,
     set_driver_document_files,
 )
-from app.documents.validation import normalize_passport_number, validate_recognition
+from app.docs.validation import normalize_passport_number, validate_recognition
 from app.drivers.models import Driver
 from app.extensions import db
 from app.models.user import Role

@@ -17,8 +17,8 @@ from decimal import Decimal
 
 import pytest
 
-from app.documents.constants import ENTITY_DRIVER
-from app.documents.models import DocumentType, DriverDocument
+from app.docs.constants import ENTITY_DRIVER
+from app.docs.models import DocumentType, DriverDocument
 from app.drivers.models import ContractType, Driver
 from app.extensions import db
 from app.payroll.calculator import calculate

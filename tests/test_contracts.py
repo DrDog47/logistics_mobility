@@ -6,9 +6,9 @@ from __future__ import annotations
 from datetime import date, timedelta
 from decimal import Decimal
 
-from app.documents.constants import ENTITY_DRIVER
-from app.documents.models import DocumentType, DriverDocument
-from app.documents.status import document_status
+from app.docs.constants import ENTITY_DRIVER
+from app.docs.models import DocumentType, DriverDocument
+from app.docs.status import document_status
 from app.drivers.contracts import contract_documents, contract_terms, current_contract_doc
 from app.drivers.models import Driver
 from app.drivers.routes import _driver_stats

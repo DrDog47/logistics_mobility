@@ -6,7 +6,7 @@ from datetime import date
 
 import pytest
 
-from app.documents.recognizer import (
+from app.docs.recognizer import (
     DocumentFieldExtractor,
     IdentificationResult,
     RecognitionResult,
@@ -15,7 +15,7 @@ from app.documents.recognizer import (
     build_recognizer,
     get_recognizer,
 )
-from app.documents.recognizer.fake import FakeRecognizer
+from app.docs.recognizer.fake import FakeRecognizer
 
 
 def test_fake_parses_tz_named_passport():

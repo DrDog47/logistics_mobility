@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from app.documents.models import DocumentType, VehicleDocument
+from app.docs.models import DocumentType, VehicleDocument
 from app.extensions import db
 from app.models.user import Role, User
 from app.organisations.models import Organisation

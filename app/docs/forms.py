@@ -8,8 +8,8 @@ from flask_wtf import FlaskForm
 from wtforms import DateField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional
 
-from app.documents.constants import ENTITY_TYPES
-from app.documents.validation import validate_recognition
+from app.docs.constants import ENTITY_TYPES
+from app.docs.validation import validate_recognition
 
 
 class _IdentifierValidationMixin:

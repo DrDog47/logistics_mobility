@@ -3,7 +3,7 @@
 All models must be imported here so that Alembic autogenerate can see them.
 """
 
-from app.documents.models import (  # noqa: F401
+from app.docs.models import (  # noqa: F401
     Document,
     DocumentType,
     DriverDocument,

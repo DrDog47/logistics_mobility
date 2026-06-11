@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from types import SimpleNamespace
 
-from app.documents.validation import normalize_passport_number, validate_recognition
+from app.docs.validation import normalize_passport_number, validate_recognition
 
 
 def _r(**kw):

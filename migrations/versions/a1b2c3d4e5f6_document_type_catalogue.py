@@ -13,7 +13,7 @@ from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
-from app.documents.constants import BASE_DOCUMENT_TYPES
+from app.docs.constants import BASE_DOCUMENT_TYPES
 
 # revision identifiers, used by Alembic.
 revision = 'a1b2c3d4e5f6'
