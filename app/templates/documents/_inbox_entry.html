@@ -27,7 +27,8 @@
       hx-post="{{ url_for('documents.apply_inbox') }}"
       hx-target="#entry-{{ uid }}"
       hx-swap="outerHTML"
-      hx-confirm="{{ _('Save this document (create/update the driver if needed)?') }}">
+      hx-confirm="{{ _('Save this document (create/update the driver if needed)?') }}"
+      hx-disinherit="hx-confirm">
     <input type="hidden" name="e{{ uid }}_filename" value="{{ item.filename }}">
 
     <div class="dz-entry__layout">
