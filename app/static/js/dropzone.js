@@ -65,9 +65,11 @@
 
         var sub = document.createElement("span");
         sub.className = "dropzone__file-sub";
+        // Unsupported types are still uploaded (§8.2) — flag them as
+        // "unrecognised format" rather than blocking them.
         sub.textContent = ok
           ? formatSize(file.size)
-          : formatSize(file.size) + " · " + (ext ? "." + ext : "?") + " — unsupported";
+          : formatSize(file.size) + " · " + (ext ? "." + ext : "?") + " — unrecognised format";
 
         meta.appendChild(name);
         meta.appendChild(sub);
@@ -141,9 +143,11 @@
     }
 
     function acceptedFiles() {
+      // Upload every staged file, including unrecognised formats (§8.2); the
+      // inbox flags unsupported types for review rather than rejecting them.
       var out = [];
       staged.forEach(function (file) {
-        if (ACCEPT_EXT.indexOf(extOf(file.name)) !== -1) out.push(file);
+        out.push(file);
       });
       return out;
     }
@@ -158,7 +162,7 @@
       processBtn.addEventListener("click", function () {
         var toSend = acceptedFiles();
         if (!toSend.length) {
-          setStatus("No supported files to upload.", true);
+          setStatus("No files to upload.", true);
           return;
         }
 

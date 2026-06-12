@@ -1,19 +1,27 @@
-{# Document list with expiry colour-coding; each document's files are shown as
-   collapsible sub-rows. Caller sets: documents (iterable), doc_kind ('driver' |
-   'vehicle'), can_edit (bool). Driver files are driver_file rows (editable,
-   downloadable via the file endpoint); vehicle files are plain links. #}
-{% from "documents/_preview.html" import preview_tile %}
+{# Expandable documents table (PRD §6) — reusable across entities. Each document
+   is a clickable row (status, type, number, validity, actions); clicking it
+   expands its files as cards. Caller sets: documents (iterable), doc_kind
+   ('driver' | 'vehicle'), can_edit (bool). Driver files are driver_file rows
+   (editable/downloadable via the file endpoint); vehicle files are plain links. #}
 {% set rows = documents | rejectattr('is_deleted') | list %}
+{% set entity = 'vehicle' if doc_kind == 'vehicle' else 'driver' %}
+{# Map expiry levels → status-pill styles. #}
+{% set pill_for = {
+    'ok': 'ok', 'soon': 'warn', 'urgent': 'danger', 'critical': 'danger',
+    'expired': 'danger', 'not_tracked': 'muted', 'no_date': 'muted'
+} %}
+{% set cols = 7 if can_edit else 6 %}
 {% if rows %}
-<table class="table table--docs">
+<table class="docs-table">
     <thead>
         <tr>
-            <th>{{ _('Status') }}</th>
-            <th>{{ _('Type') }}</th>
-            <th>{{ _('Number') }}</th>
-            <th>{{ _('Start date') }}</th>
-            <th>{{ _('End date') }}</th>
-            {% if can_edit %}<th></th>{% endif %}
+            <th class="num-col">#</th>
+            <th class="status-col">{{ _('Status') }}</th>
+            <th class="type-col">{{ _('Type') }}</th>
+            <th>{{ _('Document number') }}</th>
+            <th class="date-col">{{ _('Start date') }}</th>
+            <th class="date-col">{{ _('End date') }}</th>
+            {% if can_edit %}<th class="actions-col right">{{ _('Actions') }}</th>{% endif %}
         </tr>
     </thead>
     <tbody>
@@ -21,72 +29,98 @@
         {% set st = document_status(doc.document_type, doc.end_date, entity_type=doc.entity_type) %}
         {% if doc_kind == 'driver' %}{% set files = doc.files | rejectattr('is_deleted') | list %}{% endif %}
         {% set n = (files | length) if doc_kind == 'driver' else (doc.scan_links | length) %}
-        <tr class="doc-row doc-row--{{ st.level }}">
-            <td><span class="badge badge--{{ st.level }}">{{ st.label }}</span></td>
+        <tr class="main-row" data-doc-toggle="{{ doc.uuid }}">
+            <td class="row-num">{{ loop.index }}</td>
+            <td><span class="status-pill {{ pill_for.get(st.level, 'muted') }}">{{ st.label }}</span></td>
             <td>
-                {% if n %}
-                <button type="button" class="files-toggle" data-files-toggle="{{ doc.uuid }}"
-                        aria-expanded="false" title="{{ _('Show/hide files') }}">
-                    <span class="files-toggle__caret">▸</span>
-                </button>
-                {% endif %}
-                {{ doc.document_type.replace('_', ' ') }}
-                {% if n %}<span class="muted">({{ n }})</span>{% endif %}
+                <div class="type-cell">
+                    <span class="expand-icon"{% if not n %} style="visibility:hidden"{% endif %}>▶</span>
+                    <span class="type-name">{{ document_type_label(entity, doc.document_type) }}
+                        {% if n %}<span class="type-count">({{ n }})</span>{% endif %}
+                    </span>
+                </div>
             </td>
-            <td class="mono">{{ doc.document_id or '—' }}</td>
-            <td>{{ doc.start_date or '—' }}</td>
-            <td>{{ doc.end_date or '—' }}</td>
+            <td><span class="doc-number {% if not doc.document_id %}empty{% endif %}">{{ doc.document_id or '—' }}</span></td>
+            <td><span class="date-cell {% if not doc.start_date %}empty{% endif %}">{{ doc.start_date or '—' }}</span></td>
+            <td><span class="date-cell {% if not doc.end_date %}empty{% endif %}">{{ doc.end_date or '—' }}</span></td>
             {% if can_edit %}
-            <td class="row-actions">
-                <a class="btn btn--ghost btn--sm"
-                   href="{{ url_for('documents.edit_' ~ doc_kind ~ '_document', doc_id=doc.uuid) }}">{{ _('Edit') }}</a>
-                {% if n %}
-                <button type="button" class="btn btn--ghost btn--sm" data-download-doc="{{ doc.uuid }}">{{ _('Download') }}</button>
-                {% endif %}
-                <form method="post"
-                      action="{{ url_for('documents.delete_' ~ doc_kind ~ '_document', doc_id=doc.uuid) }}"
-                      onsubmit="return confirm('{{ _('Delete this document and its files?') }}')" class="inline-form">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn--ghost btn--sm btn--danger">{{ _('Delete') }}</button>
-                </form>
+            <td>
+                <div class="row-actions">
+                    <a href="{{ url_for('documents.edit_' ~ doc_kind ~ '_document', doc_id=doc.uuid) }}">{{ _('Edit') }}</a>
+                    {% if n %}<button type="button" data-download-doc="{{ doc.uuid }}">{{ _('Download') }}</button>{% endif %}
+                    <form method="post"
+                          action="{{ url_for('documents.delete_' ~ doc_kind ~ '_document', doc_id=doc.uuid) }}"
+                          onsubmit="return confirm('{{ _('Delete this document and its files?') }}')" class="inline-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="danger">{{ _('Delete') }}</button>
+                    </form>
+                </div>
             </td>
             {% endif %}
         </tr>
 
-        {% if doc_kind == 'driver' %}
-        {% for file in files %}
-        <tr class="file-row" data-files-for="{{ doc.uuid }}" hidden>
-            <td class="file-row__cell" colspan="5">
-                <span class="file-row__mark">↳</span>
-                {{ preview_tile(
-                    url_for('documents.download_driver_file', file_id=file.uuid),
-                    url_for('documents.download_driver_file', file_id=file.uuid, dl=1),
-                    file.file_link.split('/')|last) }}
+        <tr class="files-row" id="files-{{ doc.uuid }}" data-files-for="{{ doc.uuid }}" hidden>
+            <td colspan="{{ cols }}">
+                <div class="files-container">
+                    {% if doc_kind == 'driver' %}
+                    {% for file in files %}
+                    {% set name = file.file_link.split('/') | last %}
+                    {% set ext = (name.rsplit('.', 1) | last | lower) if '.' in name else '' %}
+                    {% set view_url = url_for('documents.download_driver_file', file_id=file.uuid) %}
+                    {% set size = stored_file_size(file.file_link) %}
+                    <div class="file-card">
+                        <a class="file-thumb {{ 'pdf' if ext == 'pdf' else ('jpg' if ext in ['jpg','jpeg','png','gif','webp'] else 'doc') }}"
+                           href="{{ view_url }}" target="_blank" rel="noopener" title="{{ name }}">
+                            <span class="ext">{{ ext | upper or 'FILE' }}</span>
+                        </a>
+                        <div class="file-info">
+                            <div class="file-name">{{ name }}</div>
+                            <div class="file-meta">
+                                {%- if size %}{{ size }}{% endif %}
+                                {%- if file.created_at %} · {{ file.created_at.strftime('%d.%m.%Y') }}{% endif -%}
+                            </div>
+                            <div class="file-actions">
+                                <a href="{{ view_url }}" target="_blank" rel="noopener">{{ _('Preview') }}</a>
+                                {% if can_edit %}<a href="{{ url_for('documents.edit_driver_file', file_id=file.uuid) }}">{{ _('Edit') }}</a>{% endif %}
+                                <a href="{{ url_for('documents.download_driver_file', file_id=file.uuid, dl=1) }}" data-dl-url="{{ url_for('documents.download_driver_file', file_id=file.uuid, dl=1) }}">{{ _('Download') }}</a>
+                                {% if can_edit %}
+                                <form method="post" action="{{ url_for('documents.delete_driver_file', file_id=file.uuid) }}"
+                                      onsubmit="return confirm('{{ _('Delete this file?') }}')" class="inline-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="danger">{{ _('Delete') }}</button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    {% for link in doc.scan_links %}
+                    {% set name = link.split('/') | last %}
+                    {% set ext = (name.rsplit('.', 1) | last | lower) if '.' in name else '' %}
+                    <div class="file-card">
+                        <a class="file-thumb {{ 'pdf' if ext == 'pdf' else ('jpg' if ext in ['jpg','jpeg','png','gif','webp'] else 'doc') }}"
+                           href="{{ link }}" target="_blank" rel="noopener" title="{{ name }}">
+                            <span class="ext">{{ ext | upper or 'FILE' }}</span>
+                        </a>
+                        <div class="file-info">
+                            <div class="file-name">{{ name }}</div>
+                            <div class="file-actions">
+                                <a href="{{ link }}" target="_blank" rel="noopener">{{ _('Preview') }}</a>
+                                <a href="{{ link }}" data-dl-url="{{ link }}">{{ _('Download') }}</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                    {% if can_edit %}
+                    <a class="add-file-card" href="{{ url_for('documents.edit_' ~ doc_kind ~ '_document', doc_id=doc.uuid) }}">
+                        + {{ _('Add file to this document') }}
+                    </a>
+                    {% endif %}
+                </div>
             </td>
-            {% if can_edit %}
-            <td class="row-actions">
-                <a class="btn btn--ghost btn--sm"
-                   href="{{ url_for('documents.edit_driver_file', file_id=file.uuid) }}">{{ _('Edit') }}</a>
-                <form method="post"
-                      action="{{ url_for('documents.delete_driver_file', file_id=file.uuid) }}"
-                      onsubmit="return confirm('{{ _('Delete this file?') }}')" class="inline-form">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn btn--ghost btn--sm btn--danger">{{ _('Delete') }}</button>
-                </form>
-            </td>
-            {% endif %}
         </tr>
-        {% endfor %}
-        {% else %}
-        {% for link in doc.scan_links %}
-        <tr class="file-row" data-files-for="{{ doc.uuid }}" hidden>
-            <td class="file-row__cell" colspan="{{ 6 if can_edit else 5 }}">
-                <span class="file-row__mark">↳</span>
-                {{ preview_tile(link, link, link.split('/')|last) }}
-            </td>
-        </tr>
-        {% endfor %}
-        {% endif %}
         {% endfor %}
     </tbody>
 </table>

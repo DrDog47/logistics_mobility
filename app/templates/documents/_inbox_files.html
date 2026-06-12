@@ -1,0 +1,55 @@
+{# Awaiting-recognition file list (re-rendered after delete / clear / upload).
+   Recognition is driven client-side one file at a time (data-recognize-*), so
+   each recognised document appears in the confirm list as soon as it finishes.
+   Files whose type isn't recognised are flagged yellow with a warning, but
+   recognition is still allowed for them. #}
+{% if files %}
+<div class="panel__head-actions inbox-actions">
+    <button class="btn btn--primary btn--sm"
+            hx-post="{{ url_for('documents.recognize_inbox_files') }}"
+            hx-target="#confirm-entries" hx-swap="innerHTML"
+            hx-indicator="#inbox-spinner">
+        {{ _('Recognize all') }}
+    </button>
+    <button class="btn btn--ghost btn--sm"
+            hx-post="{{ url_for('documents.clear_inbox_files') }}"
+            hx-target="#inbox-files" hx-swap="innerHTML"
+            hx-confirm="{{ _('Remove all files from the inbox?') }}">
+        {{ _('Remove all') }}
+    </button>
+</div>
+
+<table class="table">
+    <thead>
+        <tr><th>{{ _('File') }}</th><th>{{ _('Size') }}</th><th></th></tr>
+    </thead>
+    <tbody>
+        {% for f in files %}
+        <tr data-inbox-row data-filename="{{ f.name }}"
+            class="{% if not f.recognizable %}is-unrecognized{% endif %}">
+            <td class="mono">
+                {{ f.name }}
+                {% if not f.recognizable %}
+                <span class="pill pill--warn" title="{{ _('This file type is not recognised — recognition may not extract anything.') }}">{{ _('unknown file type') }}</span>
+                {% endif %}
+            </td>
+            <td>{{ (f.size / 1024) | round(0, 'floor') | int }} KB</td>
+            <td class="row-actions">
+                <button class="btn btn--ghost btn--sm" data-recognize-one
+                        data-url="{{ url_for('documents.recognize_inbox_one') }}"
+                        data-filename="{{ f.name }}">
+                    {{ _('Recognize') }}
+                </button>
+                <button class="btn-x" title="{{ _('Delete file') }}" aria-label="{{ _('Delete file') }}"
+                        hx-post="{{ url_for('documents.delete_inbox_file') }}"
+                        hx-vals='{"filename": {{ f.name | tojson }}}'
+                        hx-target="#inbox-files" hx-swap="innerHTML"
+                        hx-confirm="{{ _('Delete this file from the inbox?') }}">×</button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="empty">{{ _('The inbox is empty. Upload a package from the Drivers page.') }}</p>
+{% endif %}

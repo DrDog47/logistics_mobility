@@ -1,0 +1,6 @@
+{# Replaces a confirmation entry once it is saved — the entry leaves the list. #}
+<p class="dz-entry dz-entry--done">
+    ✓ {{ _('Saved') }}: <span class="mono">{{ filename }}</span>
+    {%- if report.created_drivers %} — {{ _('driver created') }}: {{ report.created_drivers | join(', ') }}{% endif %}
+    {%- if report.archived %} — {{ _('archived') }}{% endif %}
+</p>

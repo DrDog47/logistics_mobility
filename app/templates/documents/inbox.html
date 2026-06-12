@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Inbox') }} · {{ _('Mobility Payroll') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>{{ _('Document inbox') }}</h1>
+    <a class="btn btn--ghost" href="{{ url_for('drivers.list_drivers') }}">
+        {{ _('Back to drivers') }}
+    </a>
+</header>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Upload documents') }}</h2>
+    </header>
+    {% set dz_id = 'dz-inbox' %}
+    {% set dz_title = _('Drag a package of documents here') %}
+    {% set dz_hint = _('PDF, JPG or PNG — uploaded files land here in the inbox') %}
+    {% set dz_refresh = true %}
+    {% include "documents/_dropzone.html" %}
+</section>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Files awaiting recognition') }}</h2>
+    </header>
+
+    <div id="inbox-files"
+         hx-get="{{ url_for('documents.inbox_files') }}"
+         hx-trigger="inboxChanged from:body"
+         hx-swap="innerHTML">
+        {% include "documents/_inbox_files.html" %}
+    </div>
+
+    <p id="inbox-spinner" class="muted htmx-indicator">{{ _('Recognizing…') }}</p>
+</section>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Confirm & save') }}</h2>
+    </header>
+    <p class="muted">
+        {{ _('Recognised files appear here. Edit fields if needed, bind a driver manually if wanted, then save each one. Passports create drivers and technical passports create vehicles, so they are processed first — the other documents stay locked until they are done.') }}
+    </p>
+
+    <div id="confirm-entries">
+        {% if entries %}{% include "documents/_inbox_entries.html" %}{% endif %}
+    </div>
+    <p class="confirm-empty muted">{{ _('Nothing to confirm yet — recognise a file above.') }}</p>
+</section>
+{% endblock %}

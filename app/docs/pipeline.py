@@ -12,6 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from app.docs.constants import DRIVER_DOCUMENT_VALUES, VEHICLE_DOCUMENT_VALUES
 from app.docs.recognizer import RecognitionResult, RecognizerError, get_recognizer
 from app.docs.services import inbox_dir
 
@@ -22,6 +23,11 @@ _MIME_BY_EXT: dict[str, str] = {
     "jpeg": "image/jpeg",
     "png": "image/png",
 }
+
+# Document types listed in the PRD catalogue (driver + vehicle). A recognised file
+# whose type isn't one of these is "unrecognised format" — kept in the inbox but
+# flagged and skipped by Recognise all (§8.2).
+KNOWN_FORMAT_TYPES: frozenset[str] = DRIVER_DOCUMENT_VALUES | VEHICLE_DOCUMENT_VALUES
 
 # Passport-family types that create/update drivers (§8.4). Shared with the
 # persistence layer so "what is a passport" lives in one place.
@@ -64,11 +70,46 @@ def list_inbox_files() -> list[Path]:
     return files
 
 
+def is_recognizable_file(path: Path) -> bool:
+    """True when the file's extension is one the recognizer can read (PDF/JPG/PNG).
+    Other files are kept in the inbox but never fed to the recognizer (§8.2)."""
+    return path.suffix.lstrip(".").lower() in _MIME_BY_EXT
+
+
+def list_all_inbox_files() -> list[Path]:
+    """Every top-level file in the inbox, recognisable or not (dot files and
+    subfolders excluded).
+
+    Unlike :func:`list_inbox_files`, this also surfaces unsupported file types so
+    the operator can see them flagged in the inbox and remove or re-upload them
+    (§8.2) — recognition itself still runs only over :func:`list_inbox_files`.
+    """
+    inbox = inbox_dir()
+    return [
+        entry
+        for entry in sorted(inbox.iterdir())
+        if entry.is_file() and not entry.name.startswith(".")
+    ]
+
+
 def recognize_file(path: Path) -> RecognizedFile:
     """Run the configured recognizer on a single file."""
     ext = path.suffix.lstrip(".").lower()
-    mime = _MIME_BY_EXT.get(ext, "application/octet-stream")
     size = path.stat().st_size
+    if ext not in _MIME_BY_EXT:
+        # Unsupported file type — keep it in the inbox but never feed it to the
+        # recognizer; the UI surfaces it as an unrecognised-format file (§8.2).
+        return RecognizedFile(
+            path.name,
+            size,
+            "application/octet-stream",
+            RecognitionResult(
+                recognized=False,
+                provider="-",
+                note="unsupported file format",
+            ),
+        )
+    mime = _MIME_BY_EXT[ext]
     try:
         content = path.read_bytes()
         result = get_recognizer().recognize(
@@ -82,6 +123,44 @@ def recognize_file(path: Path) -> RecognizedFile:
 def recognize_inbox() -> list[RecognizedFile]:
     """Recognise every file currently in the inbox (synchronous)."""
     return [recognize_file(p) for p in list_inbox_files()]
+
+
+async def _recognize_file_async(recognizer, path: Path) -> RecognizedFile:
+    """Async recognition of a single file using the given recognizer. Mirrors
+    :func:`recognize_file` but awaits the recognizer so a batch can overlap."""
+    ext = path.suffix.lstrip(".").lower()
+    size = path.stat().st_size
+    if ext not in _MIME_BY_EXT:
+        return RecognizedFile(
+            path.name,
+            size,
+            "application/octet-stream",
+            RecognitionResult(recognized=False, provider="-", note="unsupported file format"),
+        )
+    mime = _MIME_BY_EXT[ext]
+    try:
+        content = path.read_bytes()
+        result = await recognizer.arecognize(content=content, mime_type=mime, filename=path.name)
+        return RecognizedFile(path.name, size, mime, result)
+    except RecognizerError as exc:
+        return RecognizedFile(path.name, size, mime, None, error=str(exc))
+
+
+async def recognize_paths_async(
+    recognizer, paths: list[Path], concurrency: int = 4
+) -> list[RecognizedFile]:
+    """Recognise ``paths`` concurrently via ``asyncio.gather`` (no threads/processes),
+    capped by ``concurrency`` so a large inbox / the LLM rate limit isn't hammered.
+    ``recognizer`` and ``paths`` are passed in so this runs without app context."""
+    import asyncio
+
+    sem = asyncio.Semaphore(concurrency)
+
+    async def _one(p: Path) -> RecognizedFile:
+        async with sem:
+            return await _recognize_file_async(recognizer, p)
+
+    return list(await asyncio.gather(*[_one(p) for p in paths]))
 
 
 def sort_passports_first(recognized: list[RecognizedFile]) -> list[RecognizedFile]:
@@ -98,6 +177,19 @@ def passport_count(recognized: list[RecognizedFile]) -> int:
     """How many recognised entries are passports (drives the inbox warning)."""
     return sum(
         1 for r in recognized if r.result and r.result.document_type in PASSPORT_TYPES
+    )
+
+
+def is_known_format(item: RecognizedFile) -> bool:
+    """True when recognition produced a document type listed in the PRD catalogue.
+
+    Files that aren't recognised, or whose type isn't in :data:`KNOWN_FORMAT_TYPES`,
+    are "unrecognised format": kept in the inbox and flagged in the UI, but not
+    turned into a confirmation entry and skipped by Recognise all (§8.2)."""
+    return bool(
+        item.result
+        and item.result.recognized
+        and item.result.document_type in KNOWN_FORMAT_TYPES
     )
 
 

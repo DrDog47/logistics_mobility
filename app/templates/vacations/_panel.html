@@ -61,10 +61,10 @@
             <div class="calendar-title">{{ vac.month_date.strftime('%B %Y') }}</div>
             {# Month navigation swaps the panel in place (HTMX) — no page reload. #}
             <div class="calendar-nav">
-                <a class="btn btn--ghost btn--sm" role="button" href="{{ url_for('drivers.show_driver', driver_id=driver.uuid, vac_month=vac.prev_month, _anchor='tab-vacations') }}"
+                <a class="btn btn--ghost btn--sm" role="button" href="{{ url_for('drivers.show_driver', driver_id=driver.uuid, vac_month=vac.prev_month, _anchor='vacations') }}"
                    hx-get="{{ url_for('vacations.panel', driver_id=driver.uuid, vac_month=vac.prev_month) }}"
                    hx-target="#driver-vacations-panel" hx-swap="innerHTML">‹</a>
-                <a class="btn btn--ghost btn--sm" role="button" href="{{ url_for('drivers.show_driver', driver_id=driver.uuid, vac_month=vac.next_month, _anchor='tab-vacations') }}"
+                <a class="btn btn--ghost btn--sm" role="button" href="{{ url_for('drivers.show_driver', driver_id=driver.uuid, vac_month=vac.next_month, _anchor='vacations') }}"
                    hx-get="{{ url_for('vacations.panel', driver_id=driver.uuid, vac_month=vac.next_month) }}"
                    hx-target="#driver-vacations-panel" hx-swap="innerHTML">›</a>
             </div>

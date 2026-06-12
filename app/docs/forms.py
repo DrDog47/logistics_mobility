@@ -8,6 +8,7 @@ from flask_wtf import FlaskForm
 from wtforms import DateField, SelectField, StringField, SubmitField, TextAreaField
 from wtforms.validators import DataRequired, Length, Optional
 
+from app.db_types import uuid_or_none
 from app.docs.constants import ENTITY_TYPES
 from app.docs.validation import validate_recognition
 
@@ -71,6 +72,11 @@ class VehicleDocumentForm(_DocumentForm):
 class DriverFileForm(_IdentifierValidationMixin, FlaskForm):
     """Edit a single file attached to a driver document (driver_file row)."""
 
+    # Which document this file is attached to — lets the operator reattach a file
+    # to a different document of the same driver. Choices set per-request.
+    document_uuid = SelectField(
+        _l("Attached document"), coerce=uuid_or_none, validators=[DataRequired()]
+    )
     file_link = StringField(
         _l("File link / path"), validators=[DataRequired(), Length(max=2000)]
     )

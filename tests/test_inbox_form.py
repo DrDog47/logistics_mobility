@@ -22,7 +22,7 @@ def test_entries_from_form_parses_and_skips():
         "e1_skip": "on",  # skipped → excluded
         "e2_filename": "",  # no filename → ignored
     }
-    recognized, forced = _entries_from_form(form)
+    recognized, forced, forced_docs = _entries_from_form(form)
 
     assert [r.filename for r in recognized] == ["a.pdf"]
     r = recognized[0].result
@@ -34,15 +34,27 @@ def test_entries_from_form_parses_and_skips():
 
 
 def test_entries_from_form_empty():
-    recognized, forced = _entries_from_form({})
-    assert recognized == [] and forced == {}
+    recognized, forced, forced_docs = _entries_from_form({})
+    assert recognized == [] and forced == {} and forced_docs == {}
 
 
 def test_entries_from_form_ignores_bad_uuid():
     form = {"entry_count": "1", "e0_filename": "x.pdf", "e0_driver_uuid": "not-a-uuid"}
-    recognized, forced = _entries_from_form(form)
+    recognized, forced, forced_docs = _entries_from_form(form)
     assert recognized[0].filename == "x.pdf"
     assert forced == {}
+
+
+def test_entries_from_form_binds_document():
+    doc_uuid = uuid.uuid4()
+    form = {
+        "e0_filename": "scan.pdf",
+        "e0_document_type": "passport",
+        "e0_document_uuid": str(doc_uuid),
+    }
+    recognized, forced, forced_docs = _entries_from_form(form)
+    assert recognized[0].filename == "scan.pdf"
+    assert forced_docs == {"scan.pdf": doc_uuid}
 
 
 def test_entries_from_form_scans_opaque_uids():
@@ -55,7 +67,7 @@ def test_entries_from_form_scans_opaque_uids():
         "edeadbeef_document_type": "visa",
         "edeadbeef_driver_uuid": str(bind),
     }
-    recognized, forced = _entries_from_form(form)
+    recognized, forced, forced_docs = _entries_from_form(form)
     assert sorted(r.filename for r in recognized) == ["one.pdf", "two.pdf"]
     assert {r.result.document_type for r in recognized} == {"passport", "visa"}
     assert forced == {"two.pdf": bind}

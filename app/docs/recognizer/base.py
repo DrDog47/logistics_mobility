@@ -36,6 +36,10 @@ class RecognitionResult:
     last_name: str | None = None
     birth_date: date | None = None           # from passport (§8.4)
     nationality: str | None = None           # ISO 3166-1 alpha-3 (§8.4)
+    # Form-only fields (regrouped confirm form): carried through recognition /
+    # re-validation so the operator's input survives, but NOT persisted yet.
+    pesel: str | None = None
+    document_nationality: str | None = None  # nationality/issuing country on the document
     # Vehicle registration certificate (tech_passport) fields — Vehicle PRD §3.1, §8.4.
     registration_country: str | None = None  # ISO 3166-1 alpha-3 (issuing country)
     registration_date: date | None = None    # date the vehicle was registered
@@ -100,6 +104,18 @@ class DocumentRecognizer(ABC):
         """
         raise NotImplementedError
 
+    async def arecognize(
+        self,
+        *,
+        content: bytes,
+        mime_type: str,
+        filename: str | None = None,
+    ) -> RecognitionResult:
+        """Async variant of :meth:`recognize`. Default runs the sync version (no
+        real I/O overlap); adapters that do network I/O override it for genuine
+        concurrency under ``asyncio.gather``."""
+        return self.recognize(content=content, mime_type=mime_type, filename=filename)
+
 
 class DocumentIdentifier(ABC):
     """Stage-one port: classify the document type (§8.7).
@@ -122,6 +138,16 @@ class DocumentIdentifier(ABC):
         file is not a recognisable driver/vehicle document; raise
         :class:`RecognizerError` only on transport/config failures."""
         raise NotImplementedError
+
+    async def aidentify(
+        self,
+        *,
+        content: bytes,
+        mime_type: str,
+        filename: str | None = None,
+    ) -> IdentificationResult:
+        """Async variant of :meth:`identify` (default runs the sync version)."""
+        return self.identify(content=content, mime_type=mime_type, filename=filename)
 
 
 class DocumentFieldExtractor(ABC):
@@ -147,3 +173,21 @@ class DocumentFieldExtractor(ABC):
         ``document_type``. Raise :class:`RecognizerError` on transport/config
         failures."""
         raise NotImplementedError
+
+    async def aextract(
+        self,
+        *,
+        content: bytes,
+        mime_type: str,
+        document_type: str,
+        entity_type: str | None = None,
+        filename: str | None = None,
+    ) -> RecognitionResult:
+        """Async variant of :meth:`extract` (default runs the sync version)."""
+        return self.extract(
+            content=content,
+            mime_type=mime_type,
+            document_type=document_type,
+            entity_type=entity_type,
+            filename=filename,
+        )

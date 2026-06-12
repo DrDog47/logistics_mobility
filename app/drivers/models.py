@@ -111,6 +111,45 @@ class Driver(PrdStandardMixin, UpdatedAtMixin, db.Model):
             if not d.is_deleted and d.archived_at is not None
         ]
 
+    # --- Tachograph card sync rules ------------------------------------------
+    # The driver's tachograph_card_number and the active tachograph-card
+    # document's number are the same value, kept in step in both directions:
+    # confirming/editing the document updates the driver (see
+    # DriverDocument.sync_tachograph_number_to_driver), and editing the driver
+    # updates the document (sync_tachograph_card_number_to_documents below).
+
+    @property
+    def active_tachograph_documents(self) -> list:
+        """Active (non-archived) tachograph-card documents for this driver."""
+        from app.docs.constants import TACHOGRAPH_DOC_TYPE
+
+        return [d for d in self.active_documents if d.document_type == TACHOGRAPH_DOC_TYPE]
+
+    def sync_tachograph_card_number_to_documents(self) -> list:
+        """Rule: the driver's tachograph card number is the source of truth for
+        its active tachograph-card document(s) — push the driver's number onto any
+        whose ``document_id`` differs (including clearing it). Returns the
+        documents whose number changed."""
+        updated = []
+        for doc in self.active_tachograph_documents:
+            if doc.document_id != self.tachograph_card_number:
+                doc.document_id = self.tachograph_card_number
+                updated.append(doc)
+        return updated
+
+    def tachograph_mismatch(self) -> str | None:
+        """Validation rule: the driver's tachograph card number must equal its
+        active tachograph-card document number. Returns an error message when they
+        differ, else ``None``."""
+        for doc in self.active_tachograph_documents:
+            if (doc.document_id or None) != (self.tachograph_card_number or None):
+                return (
+                    f"Tachograph card number ({self.tachograph_card_number or '—'}) "
+                    f"does not match the tachograph document number "
+                    f"({doc.document_id or '—'})."
+                )
+        return None
+
     @property
     def id(self) -> uuid.UUID:
         """Legacy alias for the primary key (templates/url_for use ``id``)."""

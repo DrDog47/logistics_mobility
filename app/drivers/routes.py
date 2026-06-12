@@ -294,8 +294,13 @@ def edit_driver(driver_id: uuid.UUID):
     form.organisation_uuid.choices = _organisation_choices()
     if form.validate_on_submit():
         form.populate_obj(driver)
+        # Rule: editing the driver's tachograph card number updates the matching
+        # tachograph-card document so the two stay in step.
+        synced = driver.sync_tachograph_card_number_to_documents()
         db.session.commit()
         flash(_("Driver updated"), "success")
+        if synced:
+            flash(_("Tachograph card document number updated to match"), "success")
         return redirect(url_for("drivers.show_driver", driver_id=driver.uuid))
     return render_template("drivers/form.html", form=form, driver=driver)
 

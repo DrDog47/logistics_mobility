@@ -1,0 +1,8 @@
+{# Driver picker options. Re-fetched on `driversChanged` so a driver created by
+   saving a passport appears in the still-open entries. `selected_driver` keeps a
+   manual binding through a re-validation swap (§8.2). #}
+{% set selected_driver = selected_driver if selected_driver is defined else None %}
+<option value="">{{ _('— auto (match by data) —') }}</option>
+{% for d in drivers %}
+<option value="{{ d.uuid }}"{% if selected_driver and d.uuid|string == selected_driver|string %} selected{% endif %}>{{ d.full_name }}{% if d.identification_id %} · {{ d.identification_id }}{% endif %}</option>
+{% endfor %}

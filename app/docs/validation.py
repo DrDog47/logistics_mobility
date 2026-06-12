@@ -39,6 +39,11 @@ def is_pesel(value: str) -> bool:
     return bool(_PESEL.match(value))
 
 
+def is_tacho(value: str) -> bool:
+    """A tachograph card number — exactly 16 latin letters/digits (PRD §8)."""
+    return bool(_TACHO.match(value))
+
+
 def validate_recognition(result, today: date | None = None) -> dict[str, str]:
     """Return ``{field: message}`` for every identifier that breaks its format
     rule. Empty dict means the record is safe to insert/update.
@@ -87,10 +92,25 @@ def validate_recognition(result, today: date | None = None) -> dict[str, str]:
     return errors
 
 
+def confirm_field_errors(result, today: date | None = None) -> dict[str, str]:
+    """Errors that block confirming an inbox entry (§8.2).
+
+    The format rules (:func:`validate_recognition`) plus a hard requirement that
+    the **document type** is set — a file can't be filed without knowing its type,
+    so when recognition couldn't determine it the reviewer must pick one.
+    """
+    errors = validate_recognition(result, today=today)
+    if not getattr(result, "document_type", None):
+        errors["document_type"] = "Select the document type."
+    return errors
+
+
 __all__ = [
     "PASSPORT_TYPES",
     "normalize_passport_number",
     "is_latin_alnum",
     "is_pesel",
+    "is_tacho",
     "validate_recognition",
+    "confirm_field_errors",
 ]

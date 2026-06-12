@@ -71,3 +71,38 @@ class TwoStageRecognizer(DocumentRecognizer):
             document_type=result.document_type or ident.document_type,
             provider=f"{ident.provider}+{result.provider}",
         )
+
+    async def arecognize(
+        self,
+        *,
+        content: bytes,
+        mime_type: str,
+        filename: str | None = None,
+    ) -> RecognitionResult:
+        """Async identify → extract, so a batch can run under ``asyncio.gather``
+        with each stage awaiting its (async) adapter."""
+        ident = await self._identifier.aidentify(
+            content=content, mime_type=mime_type, filename=filename
+        )
+        if not ident.recognized or not ident.document_type:
+            return RecognitionResult(
+                recognized=False,
+                entity_type=ident.entity_type,
+                document_type=ident.document_type,
+                confidence=ident.confidence,
+                note=ident.note or "identification stage could not classify the document",
+                provider=ident.provider,
+            )
+        result = await self._extractor.aextract(
+            content=content,
+            mime_type=mime_type,
+            document_type=ident.document_type,
+            entity_type=ident.entity_type,
+            filename=filename,
+        )
+        return replace(
+            result,
+            entity_type=result.entity_type or ident.entity_type,
+            document_type=result.document_type or ident.document_type,
+            provider=f"{ident.provider}+{result.provider}",
+        )

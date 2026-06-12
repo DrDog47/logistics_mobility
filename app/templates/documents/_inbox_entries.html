@@ -1,0 +1,15 @@
+{# All recognised files as confirmation entries (the "Recognize all" result).
+   Replaces the confirm list. Trigger documents — passports (create drivers) and
+   technical passports (create vehicles) — are sorted first by the route; every
+   other entry stays locked until those are processed (§8.4). #}
+{% set trigger_types = trigger_types if trigger_types is defined else [] %}
+{% set pending_triggers = pending_triggers if pending_triggers is defined else 0 %}
+{% if pending_triggers and entries | length > 1 %}
+<p class="flash flash--warning">
+    {{ _('Passports and technical passports are listed first — process them before the other documents. The rest stay locked until then.') }}
+</p>
+{% endif %}
+{% for uid, item in entries %}
+{% set locked = pending_triggers and (not item.result or item.result.document_type not in trigger_types) %}
+{% include "documents/_inbox_entry.html" %}
+{% endfor %}

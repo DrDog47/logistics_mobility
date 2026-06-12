@@ -2,7 +2,9 @@
 .history/
 .env
 instance/*
-documents/
+# Document *storage* tree at the repo root (DOCUMENTS_DIR default). Anchored so it
+# does not also ignore app/templates/documents/ (the inbox/confirm templates).
+/documents/
 **/__pycache__/
 *.pyc
 *.pyo

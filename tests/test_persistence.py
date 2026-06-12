@@ -112,6 +112,130 @@ def test_visa_attaches_to_driver_created_from_passport(app, tmp_path):
         assert any("visa" in s for s in report.documents_added)
 
 
+def test_forced_document_attaches_file_to_existing_document(app, tmp_path):
+    with app.app_context():
+        _setup(app, tmp_path)
+        # Create a driver + passport document first.
+        apply_recognized([
+            _mk("Jan_Kowalski_Passport.pdf", RecognitionResult(
+                recognized=True, document_type="passport", identification_id="ID-7",
+                first_name="Jan", last_name="Kowalski",
+            )),
+        ])
+        doc = db.session.execute(db.select(DriverDocument)).scalar_one()
+        assert len(doc.files) == 1
+
+        # An extra scan, manually bound to that existing document.
+        extra = _mk("passport_back.png", RecognitionResult(
+            recognized=True, document_type="passport",
+            first_name="Jan", last_name="Kowalski",
+        ))
+        report = apply_recognized([extra], forced_docs={"passport_back.png": doc.uuid})
+
+        db.session.refresh(doc)
+        assert len(doc.files) == 2  # the extra scan attached, no new document
+        assert db.session.execute(db.select(DriverDocument)).scalars().all() == [doc]
+        assert any("attached to existing passport" in s for s in report.documents_skipped)
+        assert not (inbox_dir() / "passport_back.png").exists()  # moved into folder
+
+
+def test_suggest_existing_document_matches_driver_and_type(app, tmp_path):
+    from app.docs.persistence import entry_bound_driver, suggest_existing_document
+
+    with app.app_context():
+        _setup(app, tmp_path)
+        apply_recognized([
+            _mk("Jan_Kowalski_Passport.pdf", RecognitionResult(
+                recognized=True, document_type="passport", identification_id="ID-5",
+                first_name="Jan", last_name="Kowalski",
+            )),
+        ])
+        passport = db.session.execute(db.select(DriverDocument)).scalar_one()
+
+        # Same driver + same type → suggests the existing passport.
+        same = RecognitionResult(
+            recognized=True, document_type="passport", identification_id="ID-5",
+            first_name="Jan", last_name="Kowalski",
+        )
+        assert suggest_existing_document(same) is passport
+        assert entry_bound_driver(same) is passport.driver
+
+        # Same driver, different type → no suggestion (create new).
+        visa = RecognitionResult(
+            recognized=True, document_type="visa", identification_id="ID-5",
+            first_name="Jan", last_name="Kowalski",
+        )
+        assert suggest_existing_document(visa) is None
+
+        # Unknown driver → no driver, no suggestion.
+        ghost = RecognitionResult(
+            recognized=True, document_type="passport",
+            first_name="No", last_name="Body",
+        )
+        assert entry_bound_driver(ghost) is None
+        assert suggest_existing_document(ghost) is None
+
+
+def test_find_driver_name_match_is_case_insensitive_substring(app, tmp_path):
+    from app.docs.persistence import _find_driver
+
+    with app.app_context():
+        _setup(app, tmp_path)
+        jan = Driver(first_name="Jan", last_name="Kowalski", identification_id="ID-N")
+        db.session.add(jan)
+        db.session.commit()
+
+        # Lower-case + partial recognised names still match the stored driver.
+        d, amb = _find_driver(RecognitionResult(
+            recognized=True, document_type="visa", first_name="jan", last_name="kowal",
+        ))
+        assert d is jan and amb is None
+
+        # A non-matching surname → no match.
+        d, amb = _find_driver(RecognitionResult(
+            recognized=True, document_type="visa", first_name="jan", last_name="nowak",
+        ))
+        assert d is None
+
+
+def test_entry_confirm_errors_driver_required_for_non_triggers(app, tmp_path):
+    from app.docs.persistence import entry_confirm_errors
+
+    with app.app_context():
+        _setup(app, tmp_path)
+        jan = Driver(first_name="Jan", last_name="Kowalski", identification_id="ID-3")
+        db.session.add(jan)
+        db.session.commit()
+
+        # Non-trigger (visa) with no matching driver → driver is required.
+        ghost_visa = RecognitionResult(
+            recognized=True, document_type="visa", first_name="No", last_name="Body",
+        )
+        assert "driver_uuid" in entry_confirm_errors(ghost_visa)
+
+        # Non-trigger with a bound driver → no driver error.
+        assert "driver_uuid" not in entry_confirm_errors(ghost_visa, selected_driver=jan.uuid)
+
+        # Passport (trigger) with no driver → exempt, no driver error.
+        new_passport = RecognitionResult(
+            recognized=True, document_type="passport", first_name="A", last_name="B",
+        )
+        assert "driver_uuid" not in entry_confirm_errors(new_passport)
+
+
+def test_forced_document_missing_leaves_file_in_inbox(app, tmp_path):
+    import uuid as _uuid
+
+    with app.app_context():
+        _setup(app, tmp_path)
+        item = _mk("orphan.png", RecognitionResult(
+            recognized=True, document_type="passport", first_name="X", last_name="Y",
+        ))
+        report = apply_recognized([item], forced_docs={"orphan.png": _uuid.uuid4()})
+        assert report.left_in_inbox[0]["reason"] == "selected document not found"
+        assert (inbox_dir() / "orphan.png").exists()
+
+
 def test_non_passport_unknown_driver_stays_in_inbox(app, tmp_path):
     with app.app_context():
         _setup(app, tmp_path)

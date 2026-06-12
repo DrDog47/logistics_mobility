@@ -1,0 +1,81 @@
+{#
+  Reusable drag-and-drop upload zone (UI only — no backend yet).
+
+  Context variables:
+    dz_id        - unique id for this zone on the page (required)
+    dz_title     - heading shown inside the zone (optional)
+    dz_hint      - small helper line under the heading (optional)
+    dz_driver    - driver object when the zone lives on a driver card (optional);
+                   when present, files default to this driver.
+    dz_vehicle   - vehicle object when the zone lives on a vehicle card (optional);
+                   when present, files default to this vehicle.
+
+  Accepts a package of files (PDF / JPG / JPEG / PNG), possibly for different
+  drivers. Recognition and upload are NOT implemented here — the zone stages the
+  files client-side and shows them; the "Process" action is disabled until the
+  recognition pipeline lands (see PRD §8).
+#}
+<section
+    class="dropzone"
+    id="{{ dz_id }}"
+    data-dropzone
+    data-upload-url="{{ url_for('documents.upload_documents') }}"
+    data-inbox-url="{{ url_for('documents.inbox') }}"
+    {% if dz_refresh %}data-inbox-refresh="1"{% endif %}
+    {% if dz_driver %}data-driver-name="{{ dz_driver.full_name }}"{% endif %}
+    {% if dz_vehicle %}data-vehicle-name="{{ dz_vehicle.registration_plate }}"{% endif %}
+>
+    <div class="dropzone__area" tabindex="0" role="button"
+         aria-label="{{ _('Drop documents here or click to choose files') }}"
+         data-dropzone-area>
+        <svg class="dropzone__icon" viewBox="0 0 24 24" width="28" height="28"
+             fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <path d="M7 9l5-5 5 5"/>
+            <path d="M12 4v12"/>
+        </svg>
+        <p class="dropzone__title">
+            {{ dz_title or _('Drag documents here') }}
+        </p>
+        <p class="dropzone__hint">
+            {% if dz_hint %}{{ dz_hint }}{% else %}
+            {{ _('PDF, JPG or PNG — a whole package at once') }}
+            {% endif %}
+        </p>
+        {% if dz_driver %}
+        <p class="dropzone__scope">
+            {{ _('Default driver') }}: <strong>{{ dz_driver.full_name }}</strong>
+        </p>
+        {% elif dz_vehicle %}
+        <p class="dropzone__scope">
+            {{ _('Default vehicle') }}: <strong>{{ dz_vehicle.registration_plate }}</strong>
+        </p>
+        {% else %}
+        <p class="dropzone__scope">
+            {{ _('Package may contain documents of different drivers') }}
+        </p>
+        {% endif %}
+        <input type="file" class="dropzone__input" multiple
+               accept=".pdf,.jpg,.jpeg,.png,image/*,application/pdf"
+               data-dropzone-input hidden>
+    </div>
+
+    <div class="dropzone__list" data-dropzone-list hidden>
+        <div class="dropzone__list-head">
+            <span data-dropzone-count>0</span> {{ _('file(s) selected') }}
+            <button type="button" class="btn btn--ghost btn--sm"
+                    data-dropzone-clear>{{ _('Clear') }}</button>
+        </div>
+        <ul class="dropzone__files" data-dropzone-files></ul>
+        <div class="dropzone__actions">
+            <button type="button" class="btn btn--primary"
+                    data-dropzone-process>
+                {{ _('Upload to inbox') }}
+            </button>
+            <span class="dropzone__note" data-dropzone-status>
+                {{ _('Files land in the inbox; recognition & sorting come later.') }}
+            </span>
+        </div>
+    </div>
+</section>

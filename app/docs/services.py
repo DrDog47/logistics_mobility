@@ -2,16 +2,22 @@
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from pathlib import Path
 
 from flask import current_app
 from werkzeug.datastructures import FileStorage
 from werkzeug.security import safe_join
-from werkzeug.utils import secure_filename
 
 from app.docs.constants import BASE_DOCUMENT_TYPES
 from app.docs.models import DocumentType, DriverDocument, DriverFile
 from app.extensions import db
+
+# Control characters plus path separators and Windows-reserved characters. We
+# strip these (rather than the whole non-ASCII range) so Cyrillic / Polish names
+# survive — the inbox filename feeds the recogniser's name parsing.
+_UNSAFE_FILENAME_CHARS = re.compile(r'[\x00-\x1f\x7f<>:"/\\|?*]')
 
 
 def document_type_choices(entity_type: str) -> list[tuple[str, str]]:
@@ -32,6 +38,61 @@ def document_type_choices(entity_type: str) -> list[tuple[str, str]]:
     if rows:
         return [(r.type, r.display_label) for r in rows]
     return list(BASE_DOCUMENT_TYPES.get(entity_type, []))
+
+
+def active_driver_documents(driver_uuid=None) -> list[DriverDocument]:
+    """Active (non-deleted, non-archived) driver documents, optionally limited to
+    one driver. Used to let an operator attach/reattach a file to an existing
+    document (§8.5)."""
+    query = (
+        db.select(DriverDocument)
+        .where(
+            DriverDocument.is_deleted.is_(False),
+            DriverDocument.archived_at.is_(None),
+        )
+        .order_by(DriverDocument.document_type)
+    )
+    if driver_uuid is not None:
+        query = query.where(DriverDocument.driver_uuid == driver_uuid)
+    return db.session.execute(query).scalars().all()
+
+
+def document_label(doc: DriverDocument) -> str:
+    """Short human label for a document picker: ``type · number · → end_date``."""
+    parts: list[str] = [doc.document_type]
+    if doc.document_id:
+        parts.append(doc.document_id)
+    if doc.end_date:
+        parts.append(f"→ {doc.end_date.isoformat()}")
+    return " · ".join(parts)
+
+
+def document_type_label(entity_type: str, code: str | None) -> str:
+    """Human label for a document-type code (catalogue ``display_label``), with a
+    prettified fallback. Used by the documents table across entities."""
+    if not code:
+        return ""
+    for value, label in document_type_choices(entity_type):
+        if value == code:
+            return label
+    return code.replace("_", " ").capitalize()
+
+
+def stored_file_size(file_link: str | None) -> str | None:
+    """Human-readable size of a locally stored file, or ``None`` (external URL /
+    missing). Shown in the file cards of the documents table."""
+    path = resolve_stored_file(file_link)
+    if path is None:
+        return None
+    try:
+        size = path.stat().st_size
+    except OSError:
+        return None
+    if size < 1024:
+        return f"{size} B"
+    if size < 1024 * 1024:
+        return f"{size / 1024:.0f} KB"
+    return f"{size / (1024 * 1024):.1f} MB"
 
 
 def parse_file_links(raw: str | None) -> list[str] | None:
@@ -91,10 +152,32 @@ def inbox_dir() -> Path:
     return inbox
 
 
-def _ext_ok(filename: str) -> bool:
-    allowed = current_app.config["DOCUMENTS_ALLOWED_EXTENSIONS"]
-    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
-    return ext in allowed
+def safe_inbox_filename(original: str | None) -> str | None:
+    """Sanitise an uploaded filename for storage in the inbox.
+
+    Unlike ``werkzeug.secure_filename`` this preserves Unicode letters (Cyrillic,
+    Polish diacritics, …) so a driver's name stays intact in the stored filename
+    — which matters because the recogniser parses ``<First>_<Last>_<Type>…`` from
+    it. It still neutralises the dangerous parts:
+
+    * drops any directory component (both ``/`` and ``\\``) — no path traversal;
+    * removes control characters and path/Windows-reserved characters;
+    * trims leading/trailing dots and whitespace (no hidden/anchored names);
+    * collapses internal whitespace to ``_`` (the TZ naming convention).
+
+    Returns ``None`` when nothing usable remains (e.g. an empty or ``..`` name).
+    """
+    if not original:
+        return None
+    # Keep only the final path component, regardless of separator style.
+    name = original.replace("\\", "/").rsplit("/", 1)[-1]
+    name = unicodedata.normalize("NFC", name)
+    name = _UNSAFE_FILENAME_CHARS.sub("", name)
+    name = re.sub(r"\s+", "_", name.strip())
+    name = name.strip("._")  # no leading/trailing dots (hidden) or stray underscores
+    if name in ("", ".", ".."):
+        return None
+    return name
 
 
 def _unique_path(directory: Path, filename: str) -> Path:
@@ -121,6 +204,10 @@ def save_uploads_to_inbox(
     Recognition / sorting into driver folders happens later (PRD §8.4–8.6);
     this only lands the raw package in ``_Inbox/``. ``saved`` is the list of
     stored filenames; ``rejected`` is ``[{"name", "reason"}]`` for skipped files.
+
+    Files of any type are accepted (§8.2 — let the operator upload unrecognised
+    formats too); unsupported types simply land in the inbox flagged for review
+    rather than being rejected at upload.
     """
     destination = inbox_dir()
     saved: list[str] = []
@@ -130,10 +217,7 @@ def save_uploads_to_inbox(
         original = storage.filename or ""
         if not original:
             continue
-        if not _ext_ok(original):
-            rejected.append({"name": original, "reason": "unsupported_type"})
-            continue
-        safe = secure_filename(original)
+        safe = safe_inbox_filename(original)
         if not safe:
             rejected.append({"name": original, "reason": "bad_name"})
             continue

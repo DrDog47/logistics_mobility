@@ -52,7 +52,7 @@ def _back(driver_id: uuid.UUID):
             "drivers.show_driver",
             driver_id=driver_id,
             vac_month=month or None,
-            _anchor="tab-vacations",
+            _anchor="vacations",
         )
     )
 

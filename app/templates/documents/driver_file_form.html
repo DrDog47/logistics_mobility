@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ _('Edit file') }}{% endblock %}
+
+{% block content %}
+<header class="page-head">
+    <h1>
+        {{ _('Edit file') }} ·
+        {{ file.document.document_type.replace('_', ' ') }} · {{ driver.full_name }}
+    </h1>
+</header>
+
+<section class="panel">
+    <form method="post" class="form-grid">
+        {{ form.hidden_tag() }}
+        <div class="field field--span-2">
+            {{ form.document_uuid.label }}{{ form.document_uuid(class="input") }}
+            <p class="field__hint muted">{{ _('Move this file to a different document of the same driver.') }}</p>
+            {% for e in form.document_uuid.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field field--span-2">
+            {{ form.file_link.label }}{{ form.file_link(class="input input--mono") }}
+            {% for e in form.file_link.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.document_type.label }}{{ form.document_type(class="input input--mono") }}
+            {% for e in form.document_type.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.document_id.label }}{{ form.document_id(class="input input--mono") }}
+            {% for e in form.document_id.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.start_date.label }}{{ form.start_date(class="input") }}
+            {% for e in form.start_date.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+            {{ form.end_date.label }}{{ form.end_date(class="input") }}
+            {% for e in form.end_date.errors %}<div class="field__err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="form-grid__actions">
+            <a class="btn btn--ghost" href="{{ url_for('drivers.show_driver', driver_id=driver.uuid) }}">{{ _('Cancel') }}</a>
+            {{ form.submit(class="btn btn--primary") }}
+        </div>
+    </form>
+</section>
+{% endblock %}

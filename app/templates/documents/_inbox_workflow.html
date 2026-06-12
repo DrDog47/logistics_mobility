@@ -1,0 +1,31 @@
+{# Reusable inbox workflow: "files awaiting recognition" + "confirm & save",
+   identical in style/classes/validation to the inbox page (documents/inbox.html).
+   Drop it under a dropzone that has dz_refresh=true so uploaded files appear here
+   inline (via the inboxChanged event) and can be recognised, reviewed and saved
+   without leaving the page. The #inbox-files / #confirm-entries / #inbox-spinner
+   ids are what the inbox JS targets, so include it at most once per page. #}
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Files awaiting recognition') }}</h2>
+    </header>
+
+    <div id="inbox-files"
+         hx-get="{{ url_for('documents.inbox_files') }}"
+         hx-trigger="load, inboxChanged from:body"
+         hx-swap="innerHTML">
+    </div>
+
+    <p id="inbox-spinner" class="muted htmx-indicator">{{ _('Recognizing…') }}</p>
+</section>
+
+<section class="panel">
+    <header class="panel__head">
+        <h2>{{ _('Confirm & save') }}</h2>
+    </header>
+    <p class="muted">
+        {{ _('Recognised files appear here. Edit fields if needed, bind a driver manually if wanted, then save each one. Passports create drivers and technical passports create vehicles, so they are processed first — the other documents stay locked until they are done.') }}
+    </p>
+
+    <div id="confirm-entries"></div>
+    <p class="confirm-empty muted">{{ _('Nothing to confirm yet — recognise a file above.') }}</p>
+</section>

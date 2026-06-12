@@ -1,0 +1,20 @@
+{# A small visual preview of one file: the image/PDF itself rendered as a
+   thumbnail, linking to the full file in a new tab. ``data-dl-url`` is kept so
+   the per-document / download-all buttons still find every file. Shared by the
+   document tables and the document edit forms. #}
+{% macro preview_tile(view_url, dl_url, name) %}
+{% set ext = (name.rsplit('.', 1)|last|lower) if '.' in name else '' %}
+<a class="doc-thumb" href="{{ view_url }}" target="_blank" rel="noopener"
+   data-dl-url="{{ dl_url }}" title="{{ name }}">
+    {% if ext in ('jpg', 'jpeg', 'png', 'gif', 'webp') %}
+    <img class="doc-thumb__media" src="{{ view_url }}" alt="{{ name }}" loading="lazy">
+    {% elif ext == 'pdf' %}
+    <object class="doc-thumb__media" data="{{ view_url }}#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+            type="application/pdf" tabindex="-1"></object>
+    <span class="doc-thumb__badge">PDF</span>
+    {% else %}
+    <span class="doc-thumb__icon">{{ ext|upper or _('FILE') }}</span>
+    {% endif %}
+    <span class="doc-thumb__name">{{ name }}</span>
+</a>
+{% endmacro %}

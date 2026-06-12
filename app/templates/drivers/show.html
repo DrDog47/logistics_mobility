@@ -3,171 +3,296 @@
 
 {% block content %}
 {% set can_edit = current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
+{% set req = driver_completeness(driver) %}
+{% set n_ok = req.ok | length %}
+{% set n_exp = req.expiring | length %}
+{% set n_miss = req.missing | length %}
+{% set total = n_ok + n_exp + n_miss %}
+{% set present = n_ok + n_exp %}
+{% set doc_types = driver.active_documents | map(attribute='document_type') | list %}
 
 <div class="crumbs">
     <a class="btn btn--ghost btn--sm" href="{{ url_for('drivers.list_drivers') }}">← {{ _('Back to drivers') }}</a>
     <span class="crumbs__path">{{ _('Drivers') }}<span class="crumbs__sep">›</span>{{ _('Employee card') }}</span>
 </div>
 
-{# ---------------- TOP: profile + active contract ---------------- #}
-<section class="panel top-card">
+{# ---------------- TOP ROW: profile + document summary ---------------- #}
+<div class="driver-top">
 
-    <div class="profile-section">
-        <div class="profile-head">
-            <span class="avatar">{{ (driver.first_name[0] ~ driver.last_name[0]) | upper }}</span>
+    {# ----- PROFILE ----- #}
+    <section class="panel panel--pad">
+        <div class="profile-section">
+            <div class="profile-head">
+                <span class="avatar">{{ (driver.first_name[0] ~ driver.last_name[0]) | upper }}</span>
+                <div>
+                    <div class="driver-card__name">{{ driver.full_name }}</div>
+                    {% if driver.nationality %}<span class="country-tag">{{ driver.nationality }}</span>{% endif %}
+                    {% if not driver.is_active %}<span class="country-tag">{{ _('inactive') }}</span>{% endif %}
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-section-title">
+                    {{ _('Passport') }}
+                    {% if 'passport_eu' in doc_types %}<span class="passport-type-badge">EU</span>
+                    {% elif 'passport' in doc_types %}<span class="passport-type-badge">{{ _('non-EU') }}</span>{% endif %}
+                </div>
+                <div class="info-grid">
+                    <div class="field-row"><span class="label">{{ _('Passport №') }}</span><span class="value mono {% if not driver.passport_number %}empty{% endif %}">{{ driver.passport_number or '—' }}</span></div>
+                    <div class="field-row"><span class="label">{{ _('National ID') }}</span><span class="value mono">{{ driver.identification_id or '—' }}</span></div>
+                    <div class="field-row"><span class="label">{{ _('Nationality') }}</span><span class="value {% if not driver.nationality %}empty{% endif %}">{{ driver.nationality or '—' }}</span></div>
+                    <div class="field-row"><span class="label">{{ _('Birth date') }}</span><span class="value mono {% if not driver.birth_date %}empty{% endif %}">{{ driver.birth_date or '—' }}</span></div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-section-title">{{ _('Legal entity') }}</div>
+                <div class="info-grid">
+                    <div class="field-row"><span class="label">{{ _('Organisation') }}</span><span class="value accent">{% if driver.organisation %}<a href="{{ url_for('organisations.show_organisation', org_id=driver.organisation.uuid) }}">{{ driver.organisation.name }}</a>{% else %}—{% endif %}</span></div>
+                    <div class="field-row"><span class="label">{{ _('Hire date') }}</span><span class="value mono {% if not driver.hire_date %}empty{% endif %}">{{ driver.hire_date or '—' }}</span></div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-section-title">{{ _('Polish identifiers') }}</div>
+                <div class="info-grid">
+                    <div class="field-row"><span class="label">PESEL</span><span class="value mono {% if not driver.pesel %}empty{% endif %}">{{ driver.pesel or '—' }}</span></div>
+                    <div class="field-row"><span class="label">{{ _('Tachograph card') }}</span><span class="value mono {% if not driver.tachograph_card_number %}empty{% endif %}">{{ driver.tachograph_card_number or '—' }}</span></div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="info-section-title">{{ _('Contact') }}</div>
+                <div class="info-grid">
+                    <div class="field-row"><span class="label">{{ _('Phone') }}</span><span class="value mono {% if not driver.phone %}empty{% endif %}">{{ driver.phone or '—' }}</span></div>
+                </div>
+            </div>
+
+            {% if current_user.is_admin or current_user.is_fleet_manager %}
+            <a class="btn edit-btn" href="{{ url_for('drivers.edit_driver', driver_id=driver.uuid) }}">✎ {{ _('Edit profile') }}</a>
+            {% endif %}
+        </div>
+    </section>
+
+    {# ----- DOCUMENT SUMMARY ----- #}
+    <section class="panel panel--pad summary">
+        <div class="summary-head">
             <div>
-                <div class="driver-card__name">{{ driver.full_name }}</div>
-                {% if driver.nationality %}<span class="country-tag">{{ driver.nationality }}</span>{% endif %}
-                {% if not driver.is_active %}<span class="country-tag">{{ _('inactive') }}</span>{% endif %}
+                <div class="summary-title">{{ _('Document summary') }}</div>
+                <div class="summary-sub">{{ _('Readiness') }} {{ present }}/{{ total }}{% if total %} · {{ (present / total * 100) | round | int }}%{% endif %}</div>
+            </div>
+            <div class="summary-counters">
+                {% if n_miss %}<span class="counter-pill danger"><span class="dot"></span>{{ _('Missing') }} {{ n_miss }}</span>{% endif %}
+                {% if n_exp %}<span class="counter-pill warn"><span class="dot"></span>{{ _('Expiring') }} {{ n_exp }}</span>{% endif %}
+                <span class="counter-pill ok"><span class="dot"></span>{{ _('In order') }} {{ n_ok }}</span>
             </div>
         </div>
 
-        {% set doc_types = driver.active_documents | map(attribute='document_type') | list %}
-
-        <div class="info-section">
-            <div class="info-section-title">
-                {{ _('Passport') }}
-                {% if 'passport_eu' in doc_types %}<span class="passport-type-badge">EU</span>
-                {% elif 'passport' in doc_types %}<span class="passport-type-badge">{{ _('non-EU') }}</span>{% endif %}
-            </div>
-            <div class="info-grid">
-                <div class="field-row"><span class="label">{{ _('Passport №') }}</span><span class="value mono {% if not driver.passport_number %}empty{% endif %}">{{ driver.passport_number or '—' }}</span></div>
-                <div class="field-row"><span class="label">{{ _('National ID') }}</span><span class="value mono">{{ driver.identification_id or '—' }}</span></div>
-                <div class="field-row"><span class="label">{{ _('Nationality') }}</span><span class="value {% if not driver.nationality %}empty{% endif %}">{{ driver.nationality or '—' }}</span></div>
-                <div class="field-row"><span class="label">{{ _('Birth date') }}</span><span class="value mono {% if not driver.birth_date %}empty{% endif %}">{{ driver.birth_date or '—' }}</span></div>
-            </div>
+        {% if total %}
+        <div class="completeness-bar">
+            {% if n_ok %}<div class="seg ok" style="width:{{ n_ok / total * 100 }}%"></div>{% endif %}
+            {% if n_exp %}<div class="seg warn" style="width:{{ n_exp / total * 100 }}%"></div>{% endif %}
+            {% if n_miss %}<div class="seg danger" style="width:{{ n_miss / total * 100 }}%"></div>{% endif %}
         </div>
-
-        <div class="info-section">
-            <div class="info-section-title">{{ _('Legal entity') }}</div>
-            <div class="info-grid">
-                <div class="field-row"><span class="label">{{ _('Organisation') }}</span><span class="value">{% if driver.organisation %}<a href="{{ url_for('organisations.show_organisation', org_id=driver.organisation.uuid) }}">{{ driver.organisation.name }}</a>{% else %}—{% endif %}</span></div>
-                <div class="field-row"><span class="label">{{ _('Hire date') }}</span><span class="value mono {% if not driver.hire_date %}empty{% endif %}">{{ driver.hire_date or '—' }}</span></div>
-            </div>
-        </div>
-
-        <div class="info-section">
-            <div class="info-section-title">{{ _('Polish identifiers') }}</div>
-            <div class="info-grid">
-                <div class="field-row"><span class="label">PESEL</span><span class="value mono {% if not driver.pesel %}empty{% endif %}">{{ driver.pesel or '—' }}</span></div>
-                <div class="field-row"><span class="label">{{ _('Tachograph card') }}</span><span class="value mono {% if not driver.tachograph_card_number %}empty{% endif %}">{{ driver.tachograph_card_number or '—' }}</span></div>
-            </div>
-        </div>
-
-        <div class="info-section">
-            <div class="info-section-title">{{ _('Contact') }}</div>
-            <div class="info-grid">
-                <div class="field-row"><span class="label">{{ _('Phone') }}</span><span class="value mono {% if not driver.phone %}empty{% endif %}">{{ driver.phone or '—' }}</span></div>
-            </div>
-        </div>
-
-        {% if current_user.is_admin or current_user.is_fleet_manager %}
-        <a class="btn edit-btn" href="{{ url_for('drivers.edit_driver', driver_id=driver.uuid) }}">✎ {{ _('Edit profile') }}</a>
         {% endif %}
+
+        <table class="summary-table">
+            <thead>
+                <tr>
+                    <th class="center"></th>
+                    <th>{{ _('Document') }}</th>
+                    <th>{{ _('Number') }}</th>
+                    <th class="right">{{ _('Expiry') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in req.missing %}
+                <tr class="missing">
+                    <td><span class="sum-dot danger"></span></td>
+                    <td><span class="sum-name missing">{{ rule.display_label }}</span></td>
+                    <td><span class="sum-number empty">—</span></td>
+                    <td>
+                        {% if can_edit %}<a class="upload-mini-btn" href="{{ url_for('documents.new_driver_document', driver_id=driver.uuid) }}">{{ _('Upload') }}</a>
+                        {% else %}<span class="sum-expiry muted">—</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% for it in req.expiring %}
+                <tr>
+                    <td><span class="sum-dot warn"></span></td>
+                    <td><span class="sum-name">{{ it.rule.display_label }}</span></td>
+                    <td><span class="sum-number {% if not it.document.document_id %}empty{% endif %}">{{ it.document.document_id or '—' }}</span></td>
+                    <td><span class="sum-expiry warn">{{ it.days_left }}{{ _('d') }}</span></td>
+                </tr>
+                {% endfor %}
+                {% for it in req.ok %}
+                <tr>
+                    <td><span class="sum-dot {{ 'ok' if it.level == 'ok' else 'muted' }}"></span></td>
+                    <td><span class="sum-name {% if it.level != 'ok' %}muted{% endif %}">{{ it.rule.display_label }}</span></td>
+                    <td><span class="sum-number {% if not it.document.document_id %}empty{% endif %}">{{ it.document.document_id or '—' }}</span></td>
+                    <td>
+                        {% if it.document.end_date %}<span class="sum-expiry ok">{{ it.document.end_date }}</span>
+                        {% elif it.level == 'not_tracked' %}<span class="sum-expiry muted">{{ _('Not tracked') }}</span>
+                        {% else %}<span class="sum-expiry muted">∞</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not total %}
+                <tr><td colspan="4"><span class="sum-name muted">{{ _('No requirements configured') }}</span></td></tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </section>
+</div>
+
+{# ---------------- TABS ---------------- #}
+<section class="panel" data-tabs>
+    <div class="tabs-bar">
+        <button type="button" class="tab is-active" data-tab-target="documents">
+            {{ _('Documents') }}{% if n_miss %}<span class="alert-badge">{{ n_miss }}</span>{% endif %}
+        </button>
+        <button type="button" class="tab" data-tab-target="fines">
+            {{ _('Fines') }}<span class="count-badge">8</span>
+        </button>
+        <button type="button" class="tab" data-tab-target="vacations">{{ _('Vacations') }}</button>
+        <button type="button" class="tab" data-tab-target="history">{{ _('History') }}</button>
     </div>
 
-    <div class="divider-v"></div>
+    <div class="tab-content">
 
-    {# Required-documents tracking summary — replaces the contracts section (PRD §12.5). #}
-    {% set req = driver_completeness(driver) %}
-    <div class="contract-section reqs-section">
-        <div class="contract-section-head">
-            <span class="section-label">{{ _('Required documents') }}</span>
-            {% if req.is_complete %}
-            <span class="reqs-overall reqs-overall--ok">{{ _('Complete') }}</span>
-            {% elif req.missing %}
-            <span class="reqs-overall reqs-overall--missing">{{ _('%(n)d missing', n=req.missing|length) }}</span>
-            {% else %}
-            <span class="reqs-overall reqs-overall--expiring">{{ _('%(n)d expiring', n=req.expiring|length) }}</span>
+        {# ----- DOCUMENTS ----- #}
+        <div class="tab-pane" data-tab-panel="documents">
+            <div class="section-head">
+                <div class="section-title">{{ _('All documents') }}</div>
+                <div class="section-actions">
+                    {% if driver.active_documents %}
+                    <a class="btn btn--ghost btn--sm" href="{{ url_for('documents.download_driver_documents_zip', driver_id=driver.uuid) }}">{{ _('Download all (.zip)') }}</a>
+                    {% endif %}
+                    {% if can_edit %}
+                    <a class="btn btn--primary btn--sm" href="{{ url_for('documents.new_driver_document', driver_id=driver.uuid) }}">+ {{ _('Add document') }}</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div id="driver-documents">
+                {% with documents = driver.active_documents, doc_kind = 'driver' %}
+                {% include "documents/_doc_table.html" %}
+                {% endwith %}
+            </div>
+
+            {% if can_edit %}
+            {% set dz_id = 'dz-driver-' ~ driver.uuid %}
+            {% set dz_title = _('Drag documents here') %}
+            {% set dz_driver = driver %}
+            {% set dz_refresh = true %}
+            {% include "documents/_dropzone.html" %}
+            {% include "documents/_inbox_workflow.html" %}
+            {% endif %}
+
+            {% if driver.archived_documents %}
+            <div class="section-head" style="margin-top: var(--space-6)">
+                <div class="section-title">{{ _('Archived documents') }}</div>
+                <div class="section-actions">
+                    <a class="btn btn--ghost btn--sm" href="{{ url_for('documents.download_driver_documents_zip', driver_id=driver.uuid, archived=1) }}">{{ _('Download all (.zip)') }}</a>
+                </div>
+            </div>
+            <div id="driver-archived-documents">
+                {% with documents = driver.archived_documents, doc_kind = 'driver' %}
+                {% include "documents/_doc_table.html" %}
+                {% endwith %}
+            </div>
             {% endif %}
         </div>
 
-        {% if req.missing %}
-        <div class="reqs-block">
-            <div class="reqs-block__head reqs-block__head--missing">{{ _('Missing') }} <span class="reqs-count">{{ req.missing|length }}</span></div>
-            <div class="reqs-tags">
-                {% for rule in req.missing %}
-                <span class="req-tag req-tag--missing">{{ rule.display_label }}</span>
-                {% endfor %}
+        {# ----- FINES (mock — module not yet implemented) ----- #}
+        <div class="tab-pane" data-tab-panel="fines" hidden>
+            <div class="summary-strip">
+                <div class="sum-stat"><div class="k">{{ _('Total') }}</div><div class="v">8</div><div class="sub">{{ _('all time') }}</div></div>
+                <div class="sum-stat"><div class="k">{{ _('Unpaid') }}</div><div class="v danger">3</div><div class="sub">{{ _('need action') }}</div></div>
+                <div class="sum-stat"><div class="k">{{ _('Disputed') }}</div><div class="v warn">1</div><div class="sub">{{ _('in dispute') }}</div></div>
+                <div class="sum-stat"><div class="k">{{ _('Paid this year') }}</div><div class="v ok">4</div><div class="sub">{{ _('closed') }}</div></div>
+            </div>
+
+            <div class="section-head">
+                <div class="section-title">{{ _('Fines') }} <span class="muted" style="font-weight:400; font-size:12px">· {{ _('mock data') }}</span></div>
+                <div class="section-actions">
+                    <button type="button" class="btn btn--primary btn--sm" disabled>+ {{ _('Add fine') }}</button>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="num-col">#</th>
+                        <th>{{ _('Date') }}</th>
+                        <th>{{ _('Country') }}</th>
+                        <th>{{ _('Violation') }}</th>
+                        <th>{{ _('Amount') }}</th>
+                        <th>{{ _('Route') }}</th>
+                        <th>{{ _('Documents') }}</th>
+                        <th>{{ _('Payment status') }}</th>
+                        <th class="right">{{ _('Actions') }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="row-num">1</td><td><span class="date-cell">2026-05-14</span></td>
+                        <td><span class="country-flag">DE</span></td><td>{{ _('Speeding') }} · 18 km/h</td>
+                        <td><span class="date-cell">680 €</span></td><td><span class="status-pill muted">PL → DE → DK</span></td>
+                        <td><span class="doc-chip-count">📎 2</span></td><td><span class="status-pill warn">{{ _('Disputed') }}</span></td>
+                        <td><div class="row-actions"><button type="button">{{ _('Open') }}</button><button type="button" class="danger">{{ _('Delete') }}</button></div></td>
+                    </tr>
+                    <tr>
+                        <td class="row-num">2</td><td><span class="date-cell">2026-04-22</span></td>
+                        <td><span class="country-flag">IT</span></td><td>{{ _('Driving-time violation') }}</td>
+                        <td><span class="date-cell">820 €</span></td><td><span class="status-pill muted">PL → IT</span></td>
+                        <td><span class="doc-chip-count">📎 3</span></td><td><span class="status-pill danger">{{ _('Unpaid') }}</span></td>
+                        <td><div class="row-actions"><button type="button">{{ _('Open') }}</button><button type="button" class="danger">{{ _('Delete') }}</button></div></td>
+                    </tr>
+                    <tr>
+                        <td class="row-num">3</td><td><span class="date-cell">2026-04-15</span></td>
+                        <td><span class="country-flag">AT</span></td><td>{{ _('Overweight') }}</td>
+                        <td><span class="date-cell">540 €</span></td><td><span class="status-pill muted">—</span></td>
+                        <td><span class="doc-chip-count">📎 1</span></td><td><span class="status-pill danger">{{ _('Unpaid') }}</span></td>
+                        <td><div class="row-actions"><button type="button">{{ _('Open') }}</button><button type="button" class="danger">{{ _('Delete') }}</button></div></td>
+                    </tr>
+                    <tr>
+                        <td class="row-num">4</td><td><span class="date-cell">2026-03-08</span></td>
+                        <td><span class="country-flag">FR</span></td><td>{{ _('Illegal parking') }}</td>
+                        <td><span class="date-cell">300 €</span></td><td><span class="status-pill muted">PL → FR → ES</span></td>
+                        <td><span class="doc-chip-count">📎 2</span></td><td><span class="status-pill danger">{{ _('Unpaid') }}</span></td>
+                        <td><div class="row-actions"><button type="button">{{ _('Open') }}</button><button type="button" class="danger">{{ _('Delete') }}</button></div></td>
+                    </tr>
+                    <tr>
+                        <td class="row-num">5</td><td><span class="date-cell">2026-02-04</span></td>
+                        <td><span class="country-flag">DE</span></td><td>{{ _('Speeding') }} · 12 km/h</td>
+                        <td><span class="date-cell">240 €</span></td><td><span class="status-pill muted">PL → CZ → AT → IT</span></td>
+                        <td><span class="doc-chip-count">📎 3</span></td><td><span class="status-pill ok">{{ _('Paid') }}</span></td>
+                        <td><div class="row-actions"><button type="button">{{ _('Open') }}</button><button type="button" class="danger">{{ _('Delete') }}</button></div></td>
+                    </tr>
+                    <tr>
+                        <td class="row-num">6</td><td><span class="date-cell">2026-01-19</span></td>
+                        <td><span class="country-flag">NL</span></td><td>{{ _('Over-dimension') }}</td>
+                        <td><span class="date-cell">420 €</span></td><td><span class="status-pill muted">PL → DE → NL</span></td>
+                        <td><span class="doc-chip-count">📎 2</span></td><td><span class="status-pill ok">{{ _('Paid') }}</span></td>
+                        <td><div class="row-actions"><button type="button">{{ _('Open') }}</button><button type="button" class="danger">{{ _('Delete') }}</button></div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        {# ----- VACATIONS (moved here) ----- #}
+        <div class="tab-pane" data-tab-panel="vacations" id="tab-vacations" hidden>
+            <div id="driver-vacations-panel">
+                {% include "vacations/_panel.html" %}
             </div>
         </div>
-        {% endif %}
 
-        {% if req.expiring %}
-        <div class="reqs-block">
-            <div class="reqs-block__head reqs-block__head--expiring">{{ _('Expiring soon') }} <span class="reqs-count">{{ req.expiring|length }}</span></div>
-            {% for it in req.expiring %}
-            <a class="req-row" href="{{ url_for('documents.edit_driver_document', doc_id=it.document.uuid) }}">
-                <span class="badge badge--{{ it.level }}">{{ it.days_left }}d</span>
-                <span class="req-row__type">{{ it.rule.display_label }}</span>
-                <span class="req-row__date mono">{{ it.document.end_date }}</span>
-            </a>
-            {% endfor %}
+        {# ----- HISTORY ----- #}
+        <div class="tab-pane" data-tab-panel="history" hidden>
+            <p class="placeholder">{{ _('Change history of this card — coming soon.') }}</p>
         </div>
-        {% endif %}
 
-        {% if req.ok %}
-        <div class="reqs-block">
-            <div class="reqs-block__head reqs-block__head--ok">{{ _('In order') }} <span class="reqs-count">{{ req.ok|length }}</span></div>
-            <div class="reqs-tags">
-                {% for it in req.ok %}
-                <span class="req-tag req-tag--ok" title="{{ it.document.end_date or _('no expiry') }}">{{ it.rule.display_label }}</span>
-                {% endfor %}
-            </div>
-        </div>
-        {% endif %}
     </div>
 </section>
-
-{# ---------------- BOTTOM: documents (full width), then vacations ---------------- #}
-<div class="driver-bottom">
-
-    {# --- Documents (full width) --- #}
-    <section class="panel panel--pad">
-        <div class="panel-header">
-            <div class="panel-title">{{ _('Documents') }}</div>
-            <div class="panel-actions">
-                {% if driver.active_documents %}
-                <a class="btn btn--ghost btn--sm" href="{{ url_for('documents.download_driver_documents_zip', driver_id=driver.uuid) }}">{{ _('Download all (.zip)') }}</a>
-                {% endif %}
-                {% if can_edit %}
-                <a class="btn btn--primary btn--sm" href="{{ url_for('documents.new_driver_document', driver_id=driver.uuid) }}">+ {{ _('Add document') }}</a>
-                {% endif %}
-            </div>
-        </div>
-        <div id="driver-documents">
-            {% with documents = driver.non_contract_documents, doc_kind = 'driver' %}
-            {% include "documents/_doc_table.html" %}
-            {% endwith %}
-        </div>
-
-        {% if can_edit %}
-        {% set dz_id = 'dz-driver-' ~ driver.uuid %}
-        {% set dz_title = _('Drag documents here') %}
-        {% set dz_driver = driver %}
-        {% include "documents/_dropzone.html" %}
-        {% endif %}
-
-        {% if driver.archived_documents %}
-        <div class="panel-header panel-header--mt">
-            <div class="panel-title">{{ _('Archived documents') }}</div>
-            <div class="panel-actions">
-                <a class="btn btn--ghost btn--sm" href="{{ url_for('documents.download_driver_documents_zip', driver_id=driver.uuid, archived=1) }}">{{ _('Download all (.zip)') }}</a>
-            </div>
-        </div>
-        <div id="driver-archived-documents">
-            {% with documents = driver.archived_documents, doc_kind = 'driver' %}
-            {% include "documents/_doc_table.html" %}
-            {% endwith %}
-        </div>
-        {% endif %}
-    </section>
-
-    {# --- Vacations & Schedule (under documents) --- #}
-    <section class="panel panel--pad" id="tab-vacations">
-        <div id="driver-vacations-panel">
-            {% include "vacations/_panel.html" %}
-        </div>
-    </section>
-</div>
 {% endblock %}

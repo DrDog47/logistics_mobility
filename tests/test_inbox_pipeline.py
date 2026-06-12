@@ -7,7 +7,10 @@ from pathlib import Path
 from app.docs.pipeline import (
     RecognizedFile,
     inbox_has_pending_trigger,
+    is_known_format,
+    is_recognizable_file,
     is_trigger,
+    list_all_inbox_files,
     list_inbox_files,
     passport_count,
     pending_trigger_count,
@@ -70,6 +73,27 @@ def test_recognize_inbox_with_fake(app, tmp_path):
         assert visa.mime_type == "application/pdf"
 
 
+def test_recognize_paths_async_gathers(app, tmp_path):
+    import asyncio
+
+    from app.docs.pipeline import recognize_paths_async
+    from app.docs.recognizer import get_recognizer
+
+    with app.app_context():
+        _seed_inbox(
+            app, tmp_path,
+            "Ivan_Ivanov_Passport_2030-05-12.pdf",
+            "Petr_Petrov_Visa_2024-06-01_2026-06-01.pdf",
+        )
+        recognizer = get_recognizer()
+        paths = list_inbox_files()
+        results = asyncio.run(recognize_paths_async(recognizer, paths))
+        by_name = {r.filename: r for r in results}
+        assert len(results) == 2
+        assert by_name["Ivan_Ivanov_Passport_2030-05-12.pdf"].result.document_type == "passport"
+        assert by_name["Petr_Petrov_Visa_2024-06-01_2026-06-01.pdf"].result.document_type == "visa"
+
+
 def test_recognize_inbox_empty(app, tmp_path):
     with app.app_context():
         app.config["DOCUMENTS_DIR"] = str(tmp_path)
@@ -117,6 +141,47 @@ def test_inbox_has_pending_trigger(app, tmp_path):
         assert inbox_has_pending_trigger() is True
         # Excluding the trigger itself, nothing else is a trigger.
         assert inbox_has_pending_trigger(exclude={"Volvo_WB1234A_TechPassport.pdf"}) is False
+
+
+def test_list_all_inbox_includes_unsupported_types(app, tmp_path):
+    with app.app_context():
+        _seed_inbox(
+            app,
+            tmp_path,
+            "Ivan_Ivanov_Passport_2030-05-12.pdf",
+            "notes.txt",       # unsupported — kept and surfaced (flagged), not hidden
+            ".hidden.pdf",     # dot file — still skipped
+        )
+        names = sorted(p.name for p in list_all_inbox_files())
+        assert names == ["Ivan_Ivanov_Passport_2030-05-12.pdf", "notes.txt"]
+        # The recognition-only listing still filters unsupported types out.
+        assert [p.name for p in list_inbox_files()] == [
+            "Ivan_Ivanov_Passport_2030-05-12.pdf"
+        ]
+
+
+def test_recognize_file_unsupported_extension_is_not_recognized(app, tmp_path):
+    with app.app_context():
+        _seed_inbox(app, tmp_path, "scan.txt")
+        path = next(p for p in list_all_inbox_files() if p.name == "scan.txt")
+        assert is_recognizable_file(path) is False
+        rf = recognize_file(path)
+        assert rf.error is None
+        assert rf.result.recognized is False
+        assert is_known_format(rf) is False
+
+
+def test_is_known_format_checks_prd_catalogue():
+    assert is_known_format(_rf("p.pdf", "passport")) is True
+    assert is_known_format(_rf("reg.pdf", "tech_passport")) is True
+    # A type the recognizer invented but the PRD doesn't list → unrecognised.
+    assert is_known_format(_rf("x.pdf", "made_up_type")) is False
+    # Recognised flag false → unrecognised regardless of type.
+    not_recognized = RecognizedFile(
+        "y.pdf", 0, "application/pdf",
+        RecognitionResult(recognized=False, document_type="passport"),
+    )
+    assert is_known_format(not_recognized) is False
 
 
 def test_recognize_file_single(app, tmp_path):

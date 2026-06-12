@@ -22,11 +22,12 @@ from datetime import UTC, date, datetime
 from pathlib import Path
 
 from flask import current_app
+from sqlalchemy import func
 
 from app.docs.constants import ENTITY_DRIVER
 from app.docs.models import DocumentType, DriverDocument, DriverFile
-from app.docs.pipeline import PASSPORT_TYPES, RecognizedFile
-from app.docs.validation import is_pesel, normalize_passport_number
+from app.docs.pipeline import PASSPORT_TYPES, TRIGGER_TYPES, RecognizedFile
+from app.docs.validation import confirm_field_errors, is_pesel, normalize_passport_number
 from app.drivers.models import Driver
 from app.extensions import db
 
@@ -81,21 +82,27 @@ def _person_key(result) -> str:
     return f"name:{result.first_name}|{result.last_name}"
 
 
-def _group_units(items: list[RecognizedFile], forced: dict[str, uuid.UUID]) -> list[_Unit]:
+def _group_units(
+    items: list[RecognizedFile],
+    forced: dict[str, uuid.UUID],
+    forced_docs: dict[str, uuid.UUID] | None = None,
+) -> list[_Unit]:
     """Merge files that describe the same document into one unit (§8.5.4).
 
-    A manual driver override (``forced``) is part of the key so files bound to
-    different drivers never merge.
+    Manual overrides are part of the key so files bound to different drivers
+    (``forced``) or to different existing documents (``forced_docs``) never merge.
     """
+    forced_docs = forced_docs or {}
     units: dict[tuple, _Unit] = {}
     order: list[tuple] = []
     for item in items:
         r = item.result
         fdu = forced.get(item.filename)
+        fdoc = forced_docs.get(item.filename)
         if r.start_date or r.end_date:
-            key = (r.document_type, _person_key(r), r.start_date, r.end_date, fdu)
+            key = (r.document_type, _person_key(r), r.start_date, r.end_date, fdu, fdoc)
         else:
-            key = (r.document_type, _person_key(r), _normalized_base(item.filename), fdu)
+            key = (r.document_type, _person_key(r), _normalized_base(item.filename), fdu, fdoc)
         unit = units.get(key)
         if unit is None:
             units[key] = _Unit(result=r, items=[item])
@@ -122,6 +129,18 @@ def _active_driver_query():
     return db.select(Driver).where(Driver.is_deleted.is_(False))
 
 
+def _ci_contains(column, value: str):
+    """Case-insensitive 'contains' predicate: ``lower(column) LIKE '%value%'``.
+    The value's LIKE wildcards are escaped so they match literally."""
+    safe = (
+        value.lower()
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+    )
+    return func.lower(column).like(f"%{safe}%", escape="\\")
+
+
 def _find_driver(result) -> tuple[Driver | None, str | None]:
     """Match a driver per §8.5. Returns (driver, ambiguity_reason)."""
     if result.identification_id:
@@ -137,10 +156,12 @@ def _find_driver(result) -> tuple[Driver | None, str | None]:
         if d:
             return d, None
     if result.first_name and result.last_name:
+        # Name tier (only): case-insensitive substring match — the recognised
+        # first/last name must appear within the driver's stored names (§8.5).
         matches = db.session.execute(
             _active_driver_query().where(
-                Driver.first_name == result.first_name,
-                Driver.last_name == result.last_name,
+                _ci_contains(Driver.first_name, result.first_name),
+                _ci_contains(Driver.last_name, result.last_name),
             )
         ).scalars().all()
         if len(matches) == 1:
@@ -154,6 +175,57 @@ def _find_driver(result) -> tuple[Driver | None, str | None]:
                     return narrowed[0], None
             return None, "ambiguous name match"
     return None, None
+
+
+def find_matching_driver(result) -> Driver | None:
+    """The driver a recognised file matches (per §8.5), or ``None`` when no driver
+    matches or the match is ambiguous. Public wrapper over :func:`_find_driver`."""
+    if result is None:
+        return None
+    driver, ambiguity = _find_driver(result)
+    return None if ambiguity else driver
+
+
+def entry_bound_driver(result, selected_driver=None) -> Driver | None:
+    """The driver an inbox entry is bound to: the manually selected one
+    (``selected_driver`` UUID) if any, else the recognition match. Used to scope
+    the 'Bind to document' picker to that driver's documents (§8.5)."""
+    if selected_driver:
+        driver = db.session.get(Driver, selected_driver)
+        if driver is not None and not driver.is_deleted:
+            return driver
+    return find_matching_driver(result)
+
+
+def entry_confirm_errors(result, selected_driver=None) -> dict[str, str]:
+    """All errors blocking confirmation of an inbox entry (§8.2):
+
+    * the format rules and 'document type required' (:func:`confirm_field_errors`);
+    * for a **non-trigger** document (anything other than a passport / technical
+      passport), a bound driver is required — it attaches to an existing driver,
+      so we must know which one. Passports/tech-passports are exempt: they create
+      the entity, so they may be confirmed with no existing driver bound.
+    """
+    errors = confirm_field_errors(result)
+    dt = getattr(result, "document_type", None)
+    if dt and dt not in TRIGGER_TYPES and entry_bound_driver(result, selected_driver) is None:
+        errors["driver_uuid"] = "Select a driver — this document attaches to an existing driver."
+    return errors
+
+
+def suggest_existing_document(result, selected_driver=None) -> DriverDocument | None:
+    """The existing active document a recognised file would attach to: the entry's
+    driver (manual bind or recognition match) document of the same type. Used to
+    pre-select 'Bind to document' so a same-type document isn't duplicated.
+    Returns ``None`` when the type is unknown, no driver is bound/matched, or no
+    such document exists — i.e. a new document should be created."""
+    if result is None or not getattr(result, "document_type", None):
+        return None
+    driver = entry_bound_driver(result, selected_driver)
+    if driver is None:
+        return None
+    docs = _active_docs(driver, result.document_type)
+    return docs[0] if docs else None
 
 
 def _active_docs(driver: Driver, doc_type: str) -> list[DriverDocument]:
@@ -324,6 +396,27 @@ def _upsert_driver_from_passport(result, report: ApplyReport) -> Driver | None:
 # --- document attach (§8.5.1, §8.5.3–8.5.4, §8.6) ----------------------------
 
 
+def _attach_to_existing(
+    doc: DriverDocument,
+    unit: _Unit,
+    report: ApplyReport,
+) -> tuple[uuid.UUID, str] | None:
+    """Attach a unit's files to an existing document the operator picked (§8.5) —
+    e.g. an extra scan/page of a document that already exists. Moves the files
+    into that document's driver folder and records them as driver_file rows; the
+    document's own fields (type/number/dates) are left untouched."""
+    driver = doc.driver
+    rels = _move_unit_into_folder(driver, doc.document_type, unit)
+    _add_files(doc, unit.result, rels)
+    report.documents_skipped.append(
+        f"{', '.join(unit.filenames)} → attached to existing {doc.document_type}"
+    )
+    # Tachograph card → keep the driver's number in step with the document.
+    if doc.sync_tachograph_number_to_driver(driver):
+        report.updated_drivers.append(driver.full_name)
+    return driver.uuid, doc.document_type
+
+
 def _attach_unit(
     driver: Driver,
     unit: _Unit,
@@ -376,6 +469,9 @@ def _attach_unit(
 
     if same is not None:
         _add_files(same, result, rels)
+        # Tachograph card → keep the driver's number in step with the document.
+        if same.sync_tachograph_number_to_driver(driver):
+            report.updated_drivers.append(driver.full_name)
         report.documents_skipped.append(
             f"{', '.join(unit.filenames)} → scan added to existing {doc_type}"
         )
@@ -392,6 +488,9 @@ def _attach_unit(
     )
     db.session.add(doc)
     _add_files(doc, result, rels)
+    # Tachograph card → the confirmed card number becomes the driver's number.
+    if doc.sync_tachograph_number_to_driver(driver):
+        report.updated_drivers.append(driver.full_name)
     report.documents_added.append(f"{driver.full_name}: {doc_type} ({len(rels)} file(s))")
     return driver.uuid, doc_type
 
@@ -421,15 +520,20 @@ def apply_recognized(
     recognized: list[RecognizedFile],
     today: date | None = None,
     forced: dict[str, uuid.UUID] | None = None,
+    forced_docs: dict[str, uuid.UUID] | None = None,
 ) -> ApplyReport:
     """Persist recognised files. Commits once at the end.
 
     ``forced`` maps a filename to a driver UUID for manual binding (§8.5): such
     files attach directly to that driver, bypassing passport upsert / matching.
+    ``forced_docs`` maps a filename to an existing document UUID: such files are
+    attached straight to that document (e.g. an extra scan / page of a document
+    that already exists), bypassing the create/match logic entirely.
     """
     today = today or date.today()
     now = datetime.now(UTC)
     forced = forced or {}
+    forced_docs = forced_docs or {}
     report = ApplyReport()
     known_types = _known_driver_types()
     affected: set[tuple] = set()
@@ -442,11 +546,30 @@ def apply_recognized(
             continue
         valid.append(item)
 
-    units = _group_units(valid, forced)
-    forced_units = [u for u in units if forced.get(u.items[0].filename)]
-    auto_units = [u for u in units if not forced.get(u.items[0].filename)]
+    units = _group_units(valid, forced, forced_docs)
+    doc_bound_units = [u for u in units if forced_docs.get(u.items[0].filename)]
+    rest = [u for u in units if not forced_docs.get(u.items[0].filename)]
+    forced_units = [u for u in rest if forced.get(u.items[0].filename)]
+    auto_units = [u for u in rest if not forced.get(u.items[0].filename)]
     passport_units = [u for u in auto_units if (u.result.document_type or "") in _PASSPORT_TYPES]
     other_units = [u for u in auto_units if (u.result.document_type or "") not in _PASSPORT_TYPES]
+
+    # Phase 0 — files manually bound to an existing document attach straight to it.
+    for unit in doc_bound_units:
+        doc = db.session.get(DriverDocument, forced_docs[unit.items[0].filename])
+        if (
+            doc is None
+            or doc.is_deleted
+            or doc.archived_at is not None
+            or doc.driver is None
+            or doc.driver.is_deleted
+        ):
+            for name in unit.filenames:
+                report._leave(name, "selected document not found")
+            continue
+        touched = _attach_to_existing(doc, unit, report)
+        if touched:
+            affected.add(touched)
 
     # Phase 1 — passports upsert drivers (§8.4), then attach the passport scan.
     for unit in passport_units:

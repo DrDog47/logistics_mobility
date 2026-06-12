@@ -47,12 +47,19 @@ def _register_template_globals(app: Flask) -> None:
 
     from app.docs.requirements import driver_completeness, vehicle_completeness
     from app.docs.status import document_status
-    from app.docs.validation import validate_recognition
+    from app.docs.persistence import entry_bound_driver, entry_confirm_errors
+    from app.docs.services import document_type_label, stored_file_size
+    from app.docs.validation import confirm_field_errors, validate_recognition
 
     app.jinja_env.globals["document_status"] = document_status
     app.jinja_env.globals["driver_completeness"] = driver_completeness
     app.jinja_env.globals["vehicle_completeness"] = vehicle_completeness
     app.jinja_env.globals["validate_recognition"] = validate_recognition
+    app.jinja_env.globals["confirm_field_errors"] = confirm_field_errors
+    app.jinja_env.globals["entry_bound_driver"] = entry_bound_driver
+    app.jinja_env.globals["entry_confirm_errors"] = entry_confirm_errors
+    app.jinja_env.globals["document_type_label"] = document_type_label
+    app.jinja_env.globals["stored_file_size"] = stored_file_size
     app.jinja_env.globals["today"] = date.today
 
 

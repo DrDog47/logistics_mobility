@@ -1,0 +1,14 @@
+{# Document picker options for "Bind to document", filtered to the entry's driver
+   AND its identified document type (§8.5). `ready` is true only when both are
+   known; otherwise the picker is empty and the entry can't be submitted.
+   `documents`, `ready` and `selected_document` are set by the caller. #}
+{% set selected_document = selected_document if selected_document is defined else None %}
+{% set ready = ready if ready is defined else true %}
+{% if not ready %}
+<option value="">{{ _('— select a driver and document type first —') }}</option>
+{% else %}
+<option value="">{{ _('— new document —') }}</option>
+{% for d in documents %}
+<option value="{{ d.uuid }}"{% if selected_document and d.uuid|string == selected_document|string %} selected{% endif %}>{{ d.document_type }}{% if d.document_id %} · {{ d.document_id }}{% endif %}{% if d.end_date %} · → {{ d.end_date }}{% endif %}</option>
+{% endfor %}
+{% endif %}

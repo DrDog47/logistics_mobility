@@ -55,6 +55,11 @@ VEHICLE_DOCUMENT_TYPES: list[tuple[str, str]] = [
 DRIVER_DOCUMENT_VALUES = frozenset(v for v, _ in DRIVER_DOCUMENT_TYPES)
 VEHICLE_DOCUMENT_VALUES = frozenset(v for v, _ in VEHICLE_DOCUMENT_TYPES)
 
+# Tachograph card (karta kierowcy): its document number is the driver's
+# tachograph card number, kept in step between the driver profile and the
+# document (see Driver/DriverDocument tachograph sync rules).
+TACHOGRAPH_DOC_TYPE = "tacho_card"
+
 # Base catalogue keyed by entity_type — used to seed the document_type table
 # (CLI ``seed-document-types`` and the Alembic migration) and as a form fallback.
 BASE_DOCUMENT_TYPES: dict[str, list[tuple[str, str]]] = {

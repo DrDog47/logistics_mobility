@@ -5,7 +5,11 @@ from __future__ import annotations
 from datetime import date
 from types import SimpleNamespace
 
-from app.docs.validation import normalize_passport_number, validate_recognition
+from app.docs.validation import (
+    confirm_field_errors,
+    normalize_passport_number,
+    validate_recognition,
+)
 
 
 def _r(**kw):
@@ -16,6 +20,18 @@ def _r(**kw):
     )
     base.update(kw)
     return SimpleNamespace(**base)
+
+
+def test_confirm_field_errors_requires_document_type():
+    # Format-valid but no type → must select the type before confirming.
+    assert confirm_field_errors(_r(document_type=None)) == {
+        "document_type": "Select the document type."
+    }
+    # Type set and otherwise valid → no errors.
+    assert confirm_field_errors(_r(document_type="passport")) == {}
+    # Type set but a field breaks its format → that field's error, no type error.
+    errs = confirm_field_errors(_r(document_type="passport", identification_id="AB 12"))
+    assert "identification_id" in errs and "document_type" not in errs
 
 
 def test_passport_number_normalised_drops_whitespace():

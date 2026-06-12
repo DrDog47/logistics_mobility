@@ -119,6 +119,30 @@ class DriverDocument(Document):
         """Storage links for this document's scans (parallels VehicleDocument)."""
         return [f.file_link for f in self.files if not f.is_deleted]
 
+    def sync_tachograph_number_to_driver(self, driver=None) -> bool:
+        """Rule: a confirmed tachograph-card document is the source of truth for
+        the driver's tachograph card number — copy its number onto the driver so
+        the two always match. No-op for other document types or an invalid/empty
+        number. Returns ``True`` when the driver's number was changed.
+
+        ``driver`` may be passed explicitly (e.g. before the row is flushed);
+        otherwise the ``driver`` relationship is used.
+        """
+        from app.docs.constants import TACHOGRAPH_DOC_TYPE
+        from app.docs.validation import is_tacho
+
+        driver = driver if driver is not None else self.driver
+        if (
+            self.document_type == TACHOGRAPH_DOC_TYPE
+            and self.document_id
+            and is_tacho(self.document_id)
+            and driver is not None
+            and driver.tachograph_card_number != self.document_id
+        ):
+            driver.tachograph_card_number = self.document_id
+            return True
+        return False
+
     def __repr__(self) -> str:
         return f"<DriverDocument {self.document_type} driver={self.driver_uuid}>"
 

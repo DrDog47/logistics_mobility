@@ -248,6 +248,54 @@ class _ClaudeClient:
         except json.JSONDecodeError as exc:
             raise RecognizerError(f"Claude recognizer returned invalid JSON: {exc}") from exc
 
+    async def _acomplete_json(
+        self,
+        *,
+        system: str,
+        prompt: str,
+        content: bytes,
+        mime_type: str,
+        max_tokens: int,
+    ) -> dict:
+        """Async twin of :meth:`_complete_json`. A fresh ``AsyncAnthropic`` is
+        created per call so it binds to the running event loop (the inbox batch
+        runs each request on its own loop via ``asyncio.run``)."""
+        try:
+            import anthropic
+        except ImportError as exc:  # pragma: no cover - depends on env
+            raise RecognizerError(
+                "The 'anthropic' package is required for the Claude recognizer."
+            ) from exc
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    self._file_block(content=content, mime_type=mime_type),
+                    {"type": "text", "text": prompt},
+                ],
+            }
+        ]
+        try:
+            async with anthropic.AsyncAnthropic(api_key=self._api_key) as client:
+                response = await client.messages.create(
+                    model=self._model,
+                    max_tokens=max_tokens,
+                    system=system,
+                    messages=messages,
+                )
+        except RecognizerError:
+            raise
+        except Exception as exc:  # transport / API errors
+            raise RecognizerError(f"Claude recognizer failed: {exc}") from exc
+
+        text = next((b.text for b in response.content if b.type == "text"), None)
+        if not text:
+            raise RecognizerError("Claude recognizer returned no text content.")
+        try:
+            return _extract_json(text)
+        except json.JSONDecodeError as exc:
+            raise RecognizerError(f"Claude recognizer returned invalid JSON: {exc}") from exc
+
     @property
     def provider(self) -> str:
         return f"{self.name}:{self._model}"
@@ -259,21 +307,17 @@ class ClaudeIdentifier(_ClaudeClient, DocumentIdentifier):
     def __init__(self, *, model: str = "claude-haiku-4-5", api_key: str | None = None):
         super().__init__(model=model, api_key=api_key)
 
-    def identify(
-        self,
-        *,
-        content: bytes,
-        mime_type: str,
-        filename: str | None = None,
-    ) -> IdentificationResult:
+    def _ident_args(self, *, content, mime_type, filename):
         hint = f"\nOriginal filename (weak hint): {filename}" if filename else ""
-        data = self._complete_json(
+        return dict(
             system=_system(_IDENT_SCHEMA),
             prompt=_IDENT_PROMPT + hint,
             content=content,
             mime_type=mime_type,
             max_tokens=512,
         )
+
+    def _to_result(self, data: dict) -> IdentificationResult:
         return IdentificationResult(
             recognized=bool(data.get("recognized")),
             entity_type=_clean(data.get("entity_type")),
@@ -283,6 +327,16 @@ class ClaudeIdentifier(_ClaudeClient, DocumentIdentifier):
             provider=self.provider,
         )
 
+    def identify(self, *, content, mime_type, filename=None) -> IdentificationResult:
+        data = self._complete_json(**self._ident_args(content=content, mime_type=mime_type, filename=filename))
+        return self._to_result(data)
+
+    async def aidentify(self, *, content, mime_type, filename=None) -> IdentificationResult:
+        data = await self._acomplete_json(
+            **self._ident_args(content=content, mime_type=mime_type, filename=filename)
+        )
+        return self._to_result(data)
+
 
 class ClaudeExtractor(_ClaudeClient, DocumentFieldExtractor):
     """Stage two — extract fields for a known document type via Claude."""
@@ -290,23 +344,17 @@ class ClaudeExtractor(_ClaudeClient, DocumentFieldExtractor):
     def __init__(self, *, model: str = "claude-sonnet-4-6", api_key: str | None = None):
         super().__init__(model=model, api_key=api_key)
 
-    def extract(
-        self,
-        *,
-        content: bytes,
-        mime_type: str,
-        document_type: str,
-        entity_type: str | None = None,
-        filename: str | None = None,
-    ) -> RecognitionResult:
+    def _extract_args(self, *, content, mime_type, document_type, filename):
         hint = f"\nOriginal filename (weak hint): {filename}" if filename else ""
-        data = self._complete_json(
+        return dict(
             system=_system(_EXTRACT_SCHEMA),
             prompt=_extract_prompt(document_type) + hint,
             content=content,
             mime_type=mime_type,
             max_tokens=2048,
         )
+
+    def _to_result(self, data: dict, document_type: str, entity_type: str | None) -> RecognitionResult:
         return RecognitionResult(
             recognized=bool(data.get("recognized")),
             entity_type=_clean(data.get("entity_type")) or entity_type,
@@ -326,3 +374,15 @@ class ClaudeExtractor(_ClaudeClient, DocumentFieldExtractor):
             note=_clean(data.get("note")),
             provider=self.provider,
         )
+
+    def extract(self, *, content, mime_type, document_type, entity_type=None, filename=None) -> RecognitionResult:
+        data = self._complete_json(
+            **self._extract_args(content=content, mime_type=mime_type, document_type=document_type, filename=filename)
+        )
+        return self._to_result(data, document_type, entity_type)
+
+    async def aextract(self, *, content, mime_type, document_type, entity_type=None, filename=None) -> RecognitionResult:
+        data = await self._acomplete_json(
+            **self._extract_args(content=content, mime_type=mime_type, document_type=document_type, filename=filename)
+        )
+        return self._to_result(data, document_type, entity_type)

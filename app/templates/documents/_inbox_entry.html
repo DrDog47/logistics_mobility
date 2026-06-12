@@ -1,0 +1,183 @@
+{# One confirmation entry = one self-contained form (PRD §8.2). Saved on its own
+   via /apply; on success it is replaced by a saved note and the driver pickers
+   refresh (a passport may have just created a driver). `uid` keys its fields.
+   Identifier format errors block the save until the reviewer fixes them. A
+   doc-thumb preview sits to the left so the reviewer can read the document while
+   correcting fields; Delete drops a document that isn't needed. #}
+{% from "documents/_preview.html" import preview_tile %}
+{% set r = item.result %}
+{% set locked = locked if locked is defined else false %}
+{% set validated = validated if validated is defined else false %}
+{% set selected_driver = selected_driver if selected_driver is defined else None %}
+{% set selected_document = selected_document if selected_document is defined else None %}
+{# Bind-to-document is filtered by the entry's driver (manual bind or recognition
+   match) AND its identified document type. Both must be known ("ready") for the
+   picker to offer options; otherwise it's empty and the entry can't be submitted
+   (passports are exempt — see entry_confirm_errors). #}
+{% set entry_driver = entry_bound_driver(r, selected_driver) %}
+{% set type_known = r and r.document_type %}
+{% set bind_ready = entry_driver and type_known %}
+{% set bind_docs = (entry_driver.active_documents | selectattr('document_type', 'equalto', r.document_type) | list) if bind_ready else [] %}
+{% set st = document_status(r.document_type, r.end_date) if (r and r.document_type and r.end_date) else None %}
+{% set expired = st and st.level == 'expired' %}
+{% set fe = field_errors if field_errors is defined else (entry_confirm_errors(r, selected_driver) if r else {}) %}
+{% set preview_url = url_for('documents.preview_inbox_file', filename=item.filename) %}
+<form class="dz-entry {% if locked %}dz-entry--locked{% elif (error is defined and error) or fe %}dz-entry--error{% elif expired %}dz-entry--warn{% elif validated %}dz-entry--ok{% endif %}"
+      id="entry-{{ uid }}"
+      hx-post="{{ url_for('documents.apply_inbox') }}"
+      hx-target="#entry-{{ uid }}"
+      hx-swap="outerHTML"
+      hx-confirm="{{ _('Save this document (create/update the driver if needed)?') }}">
+    <input type="hidden" name="e{{ uid }}_filename" value="{{ item.filename }}">
+
+    <div class="dz-entry__layout">
+        <div class="dz-entry__thumb">
+            {{ preview_tile(preview_url, preview_url, item.filename) }}
+        </div>
+
+        <div class="dz-entry__body">
+            <div class="dz-entry__head">
+                <span class="mono">{{ item.filename }}</span>
+                {% if locked %}
+                <span class="pill pill--inactive">🔒 {{ _('locked') }}</span>
+                {% elif error is defined and error %}
+                <span class="pill pill--inactive">{{ _('not saved') }}: {{ error }}</span>
+                {% elif validated and not fe %}
+                <span class="pill pill--approved">{{ _('valid') }}</span>
+                {% elif not (r and r.recognized) %}
+                <span class="pill pill--inactive">{{ _('not recognized') }}</span>
+                {% endif %}
+            </div>
+
+            {% if locked %}
+            <p class="flash flash--warning">
+                {{ _('Locked — process passports and technical passports first; this document can only be saved after them.') }}
+            </p>
+            {% elif fe %}
+            <p class="flash flash--error">
+                {{ _('Some identifiers do not match the required format — fix the highlighted fields, then save.') }}
+            </p>
+            {% elif expired %}
+            <p class="flash flash--warning">
+                {{ _('This document is already expired (%(label)s) — it will be saved straight to the archive.', label=st.label) }}
+            </p>
+            {% endif %}
+
+            <div class="dz-entry__fields"
+                 hx-post="{{ url_for('documents.validate_inbox_entry') }}"
+                 hx-trigger="change"
+                 hx-include="closest form"
+                 hx-target="#entry-{{ uid }}"
+                 hx-swap="outerHTML">
+
+                <fieldset class="dz-entry__group">
+                    <legend class="dz-entry__group-title">{{ _('Driver fields') }}</legend>
+                    <div class="dz-entry__grid">
+                        <label class="{% if fe.get('driver_uuid') %}has-err{% endif %}">{{ _('Bind to driver') }}
+                            <select class="input" name="e{{ uid }}_driver_uuid"
+                                    hx-get="{{ url_for('documents.driver_options') }}"
+                                    hx-trigger="driversChanged from:body"
+                                    hx-target="this" hx-swap="innerHTML">
+                                {% include "documents/_driver_options.html" %}
+                            </select>
+                            {% if fe.get('driver_uuid') %}<span class="field__err">{{ fe['driver_uuid'] }}</span>{% endif %}
+                        </label>
+                        <label>{{ _('First name') }}
+                            <input class="input" name="e{{ uid }}_first_name" value="{{ r.first_name or '' }}">
+                        </label>
+                        <label>{{ _('Last name') }}
+                            <input class="input" name="e{{ uid }}_last_name" value="{{ r.last_name or '' }}">
+                        </label>
+                        <label class="{% if fe.get('identification_id') %}has-err{% endif %}">{{ _('Identification ID') }}
+                            <input class="input" name="e{{ uid }}_identification_id" value="{{ r.identification_id or '' }}">
+                            {% if fe.get('identification_id') %}<span class="field__err">{{ fe['identification_id'] }}</span>{% endif %}
+                        </label>
+                        <label class="{% if fe.get('passport_number') %}has-err{% endif %}">{{ _('Passport number') }}
+                            <input class="input" name="e{{ uid }}_passport_number" value="{{ r.passport_number or '' }}">
+                            {% if fe.get('passport_number') %}<span class="field__err">{{ fe['passport_number'] }}</span>{% endif %}
+                        </label>
+                        <label class="{% if fe.get('birth_date') %}has-err{% endif %}">{{ _('Birth date') }}
+                            <input class="input" type="date" name="e{{ uid }}_birth_date"
+                                   value="{{ r.birth_date.isoformat() if r.birth_date else '' }}">
+                            {% if fe.get('birth_date') %}<span class="field__err">{{ fe['birth_date'] }}</span>{% endif %}
+                        </label>
+                        <label class="{% if fe.get('nationality') %}has-err{% endif %}">{{ _('Nationality') }}
+                            <input class="input" name="e{{ uid }}_nationality" maxlength="3" value="{{ r.nationality or '' }}">
+                            {% if fe.get('nationality') %}<span class="field__err">{{ fe['nationality'] }}</span>{% endif %}
+                        </label>
+                        <label>{{ _('PESEL') }}
+                            <input class="input" name="e{{ uid }}_pesel" value="{{ r.pesel or '' }}">
+                        </label>
+                    </div>
+                </fieldset>
+
+                <fieldset class="dz-entry__group">
+                    <legend class="dz-entry__group-title">{{ _('Document') }}</legend>
+                    <div class="dz-entry__grid">
+                        <label class="{% if fe.get('document_type') %}has-err{% endif %}">{{ _('Type') }}
+                            <select class="input" name="e{{ uid }}_document_type">
+                                <option value="">—</option>
+                                {% for value, label in type_choices %}
+                                <option value="{{ value }}"
+                                    {% if r and r.document_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                            {% if fe.get('document_type') %}<span class="field__err">{{ fe['document_type'] }}</span>{% endif %}
+                        </label>
+                        <label>{{ _('Bind to document') }}
+                            <select class="input" name="e{{ uid }}_document_uuid"
+                                    hx-get="{{ url_for('documents.document_options') }}"
+                                    hx-trigger="documentsChanged from:body"
+                                    hx-include="closest form"
+                                    hx-target="this" hx-swap="innerHTML">
+                                {% with documents=bind_docs, ready=bind_ready %}
+                                    {% include "documents/_document_options.html" %}
+                                {% endwith %}
+                            </select>
+                            {% if not bind_ready %}
+                            <span class="field__hint muted">{{ _('Bind a driver and set the document type to choose a document.') }}</span>
+                            {% endif %}
+                        </label>
+                        <label class="{% if fe.get('document_id') %}has-err{% endif %}">{{ _('Document number') }}
+                            <input class="input" name="e{{ uid }}_document_id" value="{{ r.document_id or '' }}">
+                            {% if fe.get('document_id') %}<span class="field__err">{{ fe['document_id'] }}</span>{% endif %}
+                        </label>
+                        <label>{{ _('Document nationality') }}
+                            <input class="input" name="e{{ uid }}_document_nationality" maxlength="3"
+                                   value="{{ r.document_nationality or '' }}">
+                        </label>
+                        <label>{{ _('Valid from') }}
+                            <input class="input" type="date" name="e{{ uid }}_start_date"
+                                   value="{{ r.start_date.isoformat() if r.start_date else '' }}">
+                        </label>
+                        <label class="{% if fe.get('end_date') %}has-err{% endif %}">{{ _('Valid to') }}
+                            <input class="input" type="date" name="e{{ uid }}_end_date"
+                                   value="{{ r.end_date.isoformat() if r.end_date else '' }}">
+                            {% if fe.get('end_date') %}<span class="field__err">{{ fe['end_date'] }}</span>{% endif %}
+                        </label>
+                    </div>
+                </fieldset>
+            </div>
+
+            <div class="dz-entry__actions">
+                {% if locked %}
+                <button type="button" class="btn btn--ghost btn--sm" disabled>🔒 {{ _('Locked') }}</button>
+                {% else %}
+                {# Don't let an edited document be submitted while any cell fails its
+                   validation rule — it stays in review until every field is valid. #}
+                <button type="submit" class="btn btn--primary btn--sm"
+                        {% if fe %}disabled title="{{ _('Fix the highlighted fields before saving') }}"{% endif %}>
+                    {{ _('Confirm & save') }}
+                </button>
+                {% endif %}
+                <button type="button" class="btn btn--danger btn--sm"
+                        hx-post="{{ url_for('documents.discard_inbox_entry') }}"
+                        hx-vals='{"filename": {{ item.filename | tojson }}}'
+                        hx-target="#entry-{{ uid }}" hx-swap="outerHTML"
+                        hx-confirm="{{ _('Delete this document? It will be removed from the inbox.') }}">
+                    {{ _('Delete') }}
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
