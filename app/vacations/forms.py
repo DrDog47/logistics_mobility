@@ -7,6 +7,7 @@ from flask_wtf import FlaskForm
 from wtforms import DateField, IntegerField, SelectField, StringField, SubmitField
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, ValidationError
 
+from app.db_types import uuid_or_none
 from app.vacations.models import LeaveKind
 
 _KIND_LABELS = {
@@ -33,6 +34,17 @@ class LeaveEntryForm(FlaskForm):
     def validate_end_date(self, field: DateField) -> None:
         if self.start_date.data and field.data and field.data < self.start_date.data:
             raise ValidationError(_l("End date must not be before the start date."))
+
+
+class FleetLeaveForm(LeaveEntryForm):
+    """Leave form for the fleet vacations page, where the driver is chosen too.
+
+    ``driver_uuid.choices`` is populated in the route from the active roster.
+    """
+
+    driver_uuid = SelectField(
+        _l("Driver"), coerce=uuid_or_none, validators=[DataRequired()]
+    )
 
 
 class EntitlementForm(FlaskForm):

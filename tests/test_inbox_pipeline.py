@@ -50,6 +50,65 @@ def test_list_inbox_filters_extensions(app, tmp_path):
         assert names == ["Ivan_Ivanov_Passport_2030-05-12.pdf"]
 
 
+def test_recognize_file_is_cached(app, tmp_path, monkeypatch):
+    """A file is recognised once; repeat calls (e.g. the trigger gate) reuse the
+    cached result instead of re-running the recognizer."""
+    import app.docs.pipeline as pipeline
+
+    calls = {"n": 0}
+
+    class _CountingRecognizer:
+        name = "counting"
+
+        def recognize(self, *, content, mime_type, filename=None):
+            calls["n"] += 1
+            return RecognitionResult(recognized=True, document_type="visa")
+
+    monkeypatch.setattr(pipeline, "get_recognizer", lambda: _CountingRecognizer())
+
+    with app.app_context():
+        _seed_inbox(app, tmp_path, "Ivan_Ivanov_Visa_2030-05-12.pdf")
+        path = list_inbox_files()[0]
+        first = recognize_file(path)
+        second = recognize_file(path)
+        assert first is second           # same cached object
+        assert calls["n"] == 1           # recognizer ran only once
+
+
+def test_pending_trigger_gate_uses_cache(app, tmp_path, monkeypatch):
+    """The trigger gate reuses cached recognitions — no extra recognizer calls
+    once the inbox files have already been recognised."""
+    import app.docs.pipeline as pipeline
+
+    calls = {"n": 0}
+
+    class _CountingRecognizer:
+        name = "counting"
+
+        def recognize(self, *, content, mime_type, filename=None):
+            calls["n"] += 1
+            # passport → trigger; visa → not
+            dt = "passport" if "Passport" in (filename or "") else "visa"
+            return RecognitionResult(recognized=True, document_type=dt)
+
+    monkeypatch.setattr(pipeline, "get_recognizer", lambda: _CountingRecognizer())
+
+    with app.app_context():
+        _seed_inbox(
+            app, tmp_path,
+            "Ivan_Ivanov_Passport_2030-05-12.pdf",
+            "Petr_Petrov_Visa_2024-06-01.pdf",
+        )
+        # Recognise both up front (e.g. "Recognize all").
+        for p in list_inbox_files():
+            recognize_file(p)
+        assert calls["n"] == 2
+        # Gate checks now hit the cache — no further recognizer calls.
+        assert inbox_has_pending_trigger() is True
+        assert inbox_has_pending_trigger(exclude={"Ivan_Ivanov_Passport_2030-05-12.pdf"}) is False
+        assert calls["n"] == 2
+
+
 def test_recognize_inbox_with_fake(app, tmp_path):
     with app.app_context():
         _seed_inbox(

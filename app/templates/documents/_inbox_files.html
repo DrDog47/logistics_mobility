@@ -5,10 +5,12 @@
    recognition is still allowed for them. #}
 {% if files %}
 <div class="panel__head-actions inbox-actions">
+    {# Enqueues every inbox file into the client-side recognition queue; each
+       file's confirm entry appears as soon as it's recognised (first done
+       first), processed by the async recognize-one endpoint. #}
     <button class="btn btn--primary btn--sm"
-            hx-post="{{ url_for('documents.recognize_inbox_files') }}"
-            hx-target="#confirm-entries" hx-swap="innerHTML"
-            hx-indicator="#inbox-spinner">
+            data-recognize-all
+            data-url="{{ url_for('documents.recognize_inbox_one') }}">
         {{ _('Recognize all') }}
     </button>
     <button class="btn btn--ghost btn--sm"

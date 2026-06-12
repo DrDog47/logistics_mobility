@@ -12,6 +12,7 @@
     <script src="https://unpkg.com/htmx.org@2.0.3" defer></script>
     <script src="{{ url_for('static', filename='js/dropzone.js') }}" defer></script>
     <script src="{{ url_for('static', filename='js/documents.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/vacations.js') }}" defer></script>
     <meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
 </head>
 {% macro nav_icon(name) %}

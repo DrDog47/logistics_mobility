@@ -1,0 +1,93 @@
+{# Reusable leaves table (vacations module). Shared by the fleet vacations page
+   and the per-driver Vacations tab. Caller sets:
+     entries      list of {entry, driver, status}
+     can_edit     bool — show the Actions column (edit/delete)
+     show_driver  bool — include the Driver column (fleet) or hide it (one driver)
+     scope        'fleet' | 'driver' — which CRUD routes the row actions target
+     driver       the driver (required when scope == 'driver')
+     vac_month    'YYYY-MM' kept across the edit/delete redirect
+   Edit opens the shared modal (see _leave_modal.html + vacations.js) via the
+   data-* attributes on the Edit button. #}
+{% set kind_labels = {
+  'annual': _('Annual leave'), 'on_demand': _('On-demand leave'),
+  'sick': _('Sick leave (L4)'), 'unpaid': _('Unpaid leave'), 'other': _('Other')} %}
+{% set kind_class = {
+  'annual': 'annual', 'on_demand': 'demand', 'sick': 'sick',
+  'unpaid': 'unpaid', 'other': 'unpaid'} %}
+{% set status_labels = {
+  'active': _('In progress'), 'planned': _('Planned'), 'completed': _('Completed')} %}
+{% set ncols = (8 if show_driver else 7) + (1 if can_edit else 0) %}
+<div class="panel table-scroll">
+    <table class="data-table vacp-table">
+        <thead>
+            <tr>
+                <th class="num-col">#</th>
+                {% if show_driver %}<th>{{ _('Driver') }}</th>{% endif %}
+                <th>{{ _('Type') }}</th>
+                <th>{{ _('Start date') }}</th>
+                <th>{{ _('End date') }}</th>
+                <th>{{ _('Days') }}</th>
+                <th>{{ _('Status') }}</th>
+                <th>{{ _('Source') }}</th>
+                {% if can_edit %}<th class="right">{{ _('Actions') }}</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for it in entries %}
+            {% set e = it.entry %}
+            {% if scope == 'driver' %}
+                {% set edit_url = url_for('vacations.edit_leave', driver_id=driver.uuid, entry_id=e.uuid) %}
+                {% set delete_url = url_for('vacations.delete_leave', driver_id=driver.uuid, entry_id=e.uuid) %}
+            {% else %}
+                {% set edit_url = url_for('vacations.fleet_edit_leave', entry_id=e.uuid) %}
+                {% set delete_url = url_for('vacations.fleet_delete_leave', entry_id=e.uuid) %}
+            {% endif %}
+            <tr data-vac-row data-status="{{ it.status }}" data-name="{{ it.driver.full_name | lower }}">
+                <td class="row-num">{{ loop.index }}</td>
+                {% if show_driver %}
+                <td>
+                    <a class="driver-cell" href="{{ url_for('drivers.show_driver', driver_id=it.driver.uuid) }}">
+                        <span class="avatar avatar--sm">{{ (it.driver.first_name[0] ~ it.driver.last_name[0]) | upper }}</span>
+                        <span class="driver-cell__name">{{ it.driver.full_name }}</span>
+                    </a>
+                </td>
+                {% endif %}
+                <td><span class="vac-type-pill {{ kind_class.get(e.kind.value, 'annual') }}">{{ kind_labels.get(e.kind.value, e.kind.value) }}</span></td>
+                <td><span class="date-cell">{{ e.start_date }}</span></td>
+                <td><span class="date-cell">{{ e.end_date }}</span></td>
+                <td><span class="days-cell">{{ e.counted_days }}</span></td>
+                <td><span class="vac-status vac-status--{{ it.status }}">{{ status_labels.get(it.status, it.status) }}</span></td>
+                <td>
+                    {% if e.source.value == 'google_calendar' %}
+                    <span class="source-badge source-badge--gcal">📅 {{ _('Google Cal') }}</span>
+                    {% else %}
+                    <span class="source-badge source-badge--manual">✎ {{ _('Manual') }}</span>
+                    {% endif %}
+                </td>
+                {% if can_edit %}
+                <td>
+                    <div class="row-actions">
+                        <button type="button"
+                                data-vac-edit
+                                data-action="{{ edit_url }}"
+                                data-driver="{{ it.driver.full_name }}"
+                                data-kind="{{ e.kind.value }}"
+                                data-start="{{ e.start_date.isoformat() }}"
+                                data-end="{{ e.end_date.isoformat() }}"
+                                data-note="{{ e.note or '' }}">{{ _('Edit') }}</button>
+                        <form method="post" action="{{ delete_url }}" class="inline-form"
+                              onsubmit="return confirm('{{ _('Delete this leave?') }}')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="vac_month" value="{{ vac_month }}">
+                            <button type="submit" class="danger">{{ _('Delete') }}</button>
+                        </form>
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+            {% else %}
+            <tr><td colspan="{{ ncols }}"><p class="empty">{{ _('No leaves recorded for this year yet.') }}</p></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

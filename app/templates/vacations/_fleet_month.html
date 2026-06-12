@@ -5,44 +5,65 @@
   'annual': _('Annual leave'), 'on_demand': _('On-demand leave'),
   'sick': _('Sick leave (L4)'), 'unpaid': _('Unpaid leave'), 'other': _('Other')} %}
 {% set dow_labels = [_('Mo'), _('Tu'), _('We'), _('Th'), _('Fr'), _('Sa'), _('Su')] %}
+{# Month-nav targets — overridable so the same timeline works on the fleet page
+   and on the per-driver tab (which swaps the driver panel instead). #}
+{% set tl_target = tl_target | default('#fleet-month') %}
+{% set tl_today_url = tl_today_url | default(url_for('vacations.calendar')) %}
+{% set tl_prev_url = tl_prev_url | default(url_for('vacations.calendar', vac_month=fleet.prev_month)) %}
+{% set tl_next_url = tl_next_url | default(url_for('vacations.calendar', vac_month=fleet.next_month)) %}
+{% set tl_pick_url = tl_pick_url | default(url_for('vacations.calendar')) %}
 <section class="panel panel--pad">
     <div class="panel-header">
         {% set on_leave_count = fleet.rows | selectattr('segments') | list | length %}
-        <div class="panel-title">{{ _('Month view') }} <span class="muted">({{ _('%(n)d on leave', n=on_leave_count) }})</span></div>
+        <div class="panel-title">
+            {{ fleet.months[0].month_date.strftime('%b') }} – {{ fleet.months[-1].month_date.strftime('%b %Y') }}
+            <span class="muted">({{ _('%(n)d on leave', n=on_leave_count) }})</span>
+        </div>
         {# Month navigation swaps this panel in place (HTMX) — no page reload.
            Today sits left of the selector; the month/year is a picker for jumping
            straight to any month. #}
         <div class="panel-actions calendar-nav">
             {% if fleet.month_date.strftime('%Y-%m') != fleet.this_month %}
             <a class="btn btn--ghost btn--sm" role="button"
-               href="{{ url_for('vacations.calendar') }}"
-               hx-get="{{ url_for('vacations.calendar') }}"
-               hx-target="#fleet-month" hx-swap="innerHTML">{{ _('Today') }}</a>
+               href="{{ tl_today_url }}"
+               hx-get="{{ tl_today_url }}"
+               hx-target="{{ tl_target }}" hx-swap="innerHTML">{{ _('Today') }}</a>
             {% endif %}
             <a class="btn btn--ghost btn--sm" role="button" aria-label="{{ _('Previous month') }}"
-               href="{{ url_for('vacations.calendar', vac_month=fleet.prev_month) }}"
-               hx-get="{{ url_for('vacations.calendar', vac_month=fleet.prev_month) }}"
-               hx-target="#fleet-month" hx-swap="innerHTML">‹</a>
+               href="{{ tl_prev_url }}"
+               hx-get="{{ tl_prev_url }}"
+               hx-target="{{ tl_target }}" hx-swap="innerHTML">‹</a>
             <input type="month" class="month-picker" name="vac_month"
                    value="{{ fleet.month_date.strftime('%Y-%m') }}"
                    aria-label="{{ _('Select month') }}" title="{{ _('Select month') }}"
-                   hx-get="{{ url_for('vacations.calendar') }}"
-                   hx-target="#fleet-month" hx-swap="innerHTML" hx-trigger="change">
+                   hx-get="{{ tl_pick_url }}"
+                   hx-target="{{ tl_target }}" hx-swap="innerHTML" hx-trigger="change">
             <a class="btn btn--ghost btn--sm" role="button" aria-label="{{ _('Next month') }}"
-               href="{{ url_for('vacations.calendar', vac_month=fleet.next_month) }}"
-               hx-get="{{ url_for('vacations.calendar', vac_month=fleet.next_month) }}"
-               hx-target="#fleet-month" hx-swap="innerHTML">›</a>
+               href="{{ tl_next_url }}"
+               hx-get="{{ tl_next_url }}"
+               hx-target="{{ tl_target }}" hx-swap="innerHTML">›</a>
         </div>
     </div>
 
     {% if fleet.rows %}
     <div class="vmonth">
+        {# month bands — one label per month, spanning its day columns #}
+        <div class="vmonth-row vmonth-row--months">
+            <div class="vmonth-name"></div>
+            <div class="vmonth-monthscale">
+                {% for m in fleet.months %}
+                <div class="vmonth-month" style="grid-column: {{ m.start_col }} / span {{ m.span }};">
+                    {{ m.month_date.strftime('%B %Y') }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
         {# header scale #}
         <div class="vmonth-row vmonth-row--head">
             <div class="vmonth-name"></div>
             <div class="vmonth-scale">
                 {% for d in fleet.days %}
-                <div class="vmonth-day{% if d.weekend or d.holiday %} is-off{% endif %}{% if d.today %} is-today{% endif %}">
+                <div class="vmonth-day{% if d.weekend or d.holiday %} is-off{% endif %}{% if d.today %} is-today{% endif %}{% if d.month_start and not loop.first %} is-month-start{% endif %}">
                     <span class="vmonth-dnum">{{ d.day }}</span>
                     <span class="vmonth-dow">{{ dow_labels[d.dow] }}</span>
                 </div>
@@ -62,7 +83,7 @@
             </div>
             <div class="vmonth-track">
                 {% for d in fleet.days %}
-                <div class="vmonth-cell{% if d.weekend or d.holiday %} is-off{% endif %}{% if d.today %} is-today{% endif %}"></div>
+                <div class="vmonth-cell{% if d.weekend or d.holiday %} is-off{% endif %}{% if d.today %} is-today{% endif %}{% if d.month_start and not loop.first %} is-month-start{% endif %}"></div>
                 {% endfor %}
                 {% for s in row.segments %}
                 {% set lbl = s.note or kind_labels.get(s.kind, s.kind) %}

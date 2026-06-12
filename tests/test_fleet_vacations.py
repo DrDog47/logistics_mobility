@@ -50,6 +50,105 @@ def test_drivers_on_leave_today(app):
         assert names == {"Ivan Ivanov", "Adam Nowak"}
 
 
+def test_fleet_add_edit_delete_leave(app, client):
+    with app.app_context():
+        d = _driver()
+        _login(client, role=Role.FLEET_MANAGER)
+
+        # Add (fleet page form posts driver_uuid + dates) → reuses create_leave.
+        r = client.post(
+            "/vacations/add",
+            data={
+                "driver_uuid": str(d.uuid),
+                "kind": "annual",
+                "start_date": "2026-06-10",
+                "end_date": "2026-06-12",
+                "note": "trip",
+            },
+        )
+        assert r.status_code == 302
+        entries = services.list_entries(d.uuid, db.session)
+        assert len(entries) == 1
+        entry = entries[0]
+        assert entry.note == "trip"
+
+        # Edit (driver fixed by the entry id) → reuses update_leave.
+        r = client.post(
+            f"/vacations/{entry.uuid}/edit",
+            data={
+                "kind": "sick",
+                "start_date": "2026-06-10",
+                "end_date": "2026-06-15",
+                "note": "L4",
+            },
+        )
+        assert r.status_code == 302
+        db.session.refresh(entry)
+        assert entry.kind == LeaveKind.SICK
+        assert entry.end_date == date(2026, 6, 15)
+
+        # Delete → soft delete.
+        r = client.post(f"/vacations/{entry.uuid}/delete")
+        assert r.status_code == 302
+        db.session.refresh(entry)
+        assert entry.is_deleted
+        assert services.list_entries(d.uuid, db.session) == []
+
+
+def test_driver_vacations_tab_renders(app, client):
+    with app.app_context():
+        d = _driver()
+        _leave(d, date.today() - timedelta(days=1), date.today() + timedelta(days=1))
+        _login(client, role=Role.FLEET_MANAGER)
+        r = client.get(f"/drivers/{d.uuid}?lang=en")
+        assert r.status_code == 200
+        html = r.get_data(as_text=True)
+        # Shared vacations module rendered on the driver tab.
+        assert "vac-page" in html
+        assert "Add leave" in html
+        assert "vmonth-bar" in html          # single-driver Gantt
+        assert "vac-type-pill" in html       # leaves table
+        # Google connect/sync must NOT appear on the per-driver tab.
+        assert "Sync now" not in html
+        assert "Not connected" not in html
+
+
+def test_driver_panel_add_leave_via_module(app, client):
+    with app.app_context():
+        d = _driver()
+        _login(client, role=Role.FLEET_MANAGER)
+        # The per-driver modal posts to the existing add_leave route.
+        r = client.post(
+            f"/drivers/{d.uuid}/vacations/add",
+            data={"kind": "annual", "start_date": "2026-06-10", "end_date": "2026-06-12"},
+        )
+        assert r.status_code == 302
+        assert len(services.list_entries(d.uuid, db.session)) == 1
+
+
+def test_vacations_overview_balances(app):
+    with app.app_context():
+        today = date.today()
+        d = _driver()
+        # one used (past) and one planned (future) annual leave — go through
+        # create_leave so counted_days is computed (the raw _leave helper skips it)
+        services.create_leave(
+            d.uuid, db.session, kind=LeaveKind.ANNUAL,
+            start_date=today - timedelta(days=10), end_date=today - timedelta(days=8),
+        )
+        services.create_leave(
+            d.uuid, db.session, kind=LeaveKind.ANNUAL,
+            start_date=today + timedelta(days=10), end_date=today + timedelta(days=12),
+        )
+        db.session.commit()
+        ov = services.vacations_overview(db.session, today.year)
+        assert len(ov["entries"]) == 2
+        bal = next(b for b in ov["balances"] if b["driver"].uuid == d.uuid)
+        assert bal["used"] > 0
+        assert bal["planned"] > 0
+        assert bal["remaining"] == bal["entitled"] - bal["used"] - bal["planned"]
+
+
 def test_calendar_page_renders(app, client):
     with app.app_context():
         d = _driver()
@@ -80,26 +179,45 @@ def test_fleet_month_shows_full_active_roster(app):
         assert len(by_name["Ivan Ivanov"]["segments"]) == 1
 
 
-def test_fleet_month_timeline_clips_to_month(app):
+def test_fleet_month_timeline_spans_three_months(app):
     with app.app_context():
         d = _driver()
-        # leave spilling out of June on both ends → clipped to the month bounds
+        # Window starts at the selected month (June) and spans 3 months: Jun–Aug.
+        # A leave spilling out of June at the start is clipped left; one ending
+        # inside the window (Jul 3) is NOT clipped any more.
         _leave(d, date(2026, 5, 28), date(2026, 6, 4))
         _leave(d, date(2026, 6, 20), date(2026, 7, 3))
         fleet = services.build_fleet_month(db.session, 2026, 6)
-        assert fleet["num_days"] == 30
+        assert fleet["num_days"] == 30 + 31 + 31  # Jun + Jul + Aug
+        # prev/next still step a single month (sliding window)
         assert fleet["prev_month"] == "2026-05"
         assert fleet["next_month"] == "2026-07"
+        # month bands describe each month's column span
+        assert [m["span"] for m in fleet["months"]] == [30, 31, 31]
+        assert [m["start_col"] for m in fleet["months"]] == [1, 31, 62]
         assert len(fleet["rows"]) == 1
         segs = sorted(fleet["rows"][0]["segments"], key=lambda s: s["start_col"])
-        # first leave: clipped left, starts at col 1 (June 1), spans Jun 1–4
+        # first leave: clipped left, starts at col 1 (Jun 1), spans Jun 1–4
         assert segs[0]["start_col"] == 1
         assert segs[0]["span"] == 4
         assert segs[0]["clipped_left"] and not segs[0]["clipped_right"]
-        # second leave: Jun 20 → end of month, clipped right
+        # second leave: Jun 20 → Jul 3, fully inside the window, not clipped
         assert segs[1]["start_col"] == 20
-        assert segs[1]["span"] == 11
-        assert segs[1]["clipped_right"] and not segs[1]["clipped_left"]
+        assert segs[1]["span"] == 14
+        assert not segs[1]["clipped_left"] and not segs[1]["clipped_right"]
+
+
+def test_fleet_month_timeline_clips_to_window(app):
+    with app.app_context():
+        d = _driver()
+        # A leave running past the end of the 3-month window (Aug 31) is clipped.
+        _leave(d, date(2026, 8, 25), date(2026, 9, 10))
+        fleet = services.build_fleet_month(db.session, 2026, 6)
+        seg = fleet["rows"][0]["segments"][0]
+        assert seg["clipped_right"] and not seg["clipped_left"]
+        # Aug 25 is the 62 + 24 = 86th column; spans to Aug 31 (end of window)
+        assert seg["start_col"] == 86
+        assert seg["span"] == 7
 
 
 def test_connect_backfills_missing_leaves(app, monkeypatch):

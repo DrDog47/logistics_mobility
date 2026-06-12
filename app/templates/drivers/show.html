@@ -112,13 +112,13 @@
                     <td><span class="sum-name missing">{{ rule.display_label }}</span></td>
                     <td><span class="sum-number empty">—</span></td>
                     <td>
-                        {% if can_edit %}<a class="upload-mini-btn" href="{{ url_for('documents.new_driver_document', driver_id=driver.uuid) }}">{{ _('Upload') }}</a>
+                        {% if can_edit %}<button type="button" class="missing-status" data-scroll-target="#dz-driver-{{ driver.uuid }}">{{ _('Upload') }}</button>
                         {% else %}<span class="sum-expiry muted">—</span>{% endif %}
                     </td>
                 </tr>
                 {% endfor %}
                 {% for it in req.expiring %}
-                <tr>
+                <tr class="sum-link" data-summary-target="{{ it.document.uuid }}">
                     <td><span class="sum-dot warn"></span></td>
                     <td><span class="sum-name">{{ it.rule.display_label }}</span></td>
                     <td><span class="sum-number {% if not it.document.document_id %}empty{% endif %}">{{ it.document.document_id or '—' }}</span></td>
@@ -126,7 +126,7 @@
                 </tr>
                 {% endfor %}
                 {% for it in req.ok %}
-                <tr>
+                <tr{% if it.document and it.document.uuid %} class="sum-link" data-summary-target="{{ it.document.uuid }}"{% endif %}>
                     <td><span class="sum-dot {{ 'ok' if it.level == 'ok' else 'muted' }}"></span></td>
                     <td><span class="sum-name {% if it.level != 'ok' %}muted{% endif %}">{{ it.rule.display_label }}</span></td>
                     <td><span class="sum-number {% if not it.document.document_id %}empty{% endif %}">{{ it.document.document_id or '—' }}</span></td>

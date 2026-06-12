@@ -2,38 +2,165 @@
 {% block title %}{{ _('Vacation calendar') }} · {{ _('Mobility Payroll') }}{% endblock %}
 
 {% block content %}
+{% set can_edit = current_user.is_admin or current_user.is_fleet_manager or current_user.is_accountant %}
 {% set kind_labels = {
   'annual': _('Annual leave'), 'on_demand': _('On-demand leave'),
   'sick': _('Sick leave (L4)'), 'unpaid': _('Unpaid leave'), 'other': _('Other')} %}
+{% set kind_class = {
+  'annual': 'annual', 'on_demand': 'demand', 'sick': 'sick',
+  'unpaid': 'unpaid', 'other': 'unpaid'} %}
+{% macro initials(d) %}{{ (d.first_name[0] ~ d.last_name[0]) | upper }}{% endmacro %}
 
-<header class="page-head">
-    <h1>{{ _('Vacation calendar') }}</h1>
-</header>
+<div class="vac-page">
 
-{# --- Who is on leave today (from platform data) --- #}
-<section class="panel panel--pad">
-    <div class="panel-header">
-        <div class="panel-title">{{ _('On leave today') }} <span class="muted">({{ on_leave|length }})</span></div>
-        <div class="panel-actions"><span class="muted mono">{{ today }}</span></div>
+    {# ---------------- PAGE HEAD ---------------- #}
+    <div class="vacp-head">
+        <div>
+            <div class="vacp-title">{{ _('Vacation calendar') }}</div>
+            <div class="vacp-sub">{{ _('Employee leave tracking · Google Calendar sync') }}</div>
+        </div>
+        {% if can_edit %}
+        <div class="vacp-actions">
+            <form method="post" action="{{ url_for('vacations.fleet_sync') }}" class="inline-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="vac_month" value="{{ calendar_month }}">
+                <button class="btn btn--ghost btn--sm" type="submit" {{ '' if connected else 'disabled' }}>↻ {{ _('Sync now') }}</button>
+            </form>
+            <button class="btn btn--primary btn--sm" type="button" data-vac-add>+ {{ _('Add leave') }}</button>
+        </div>
+        {% endif %}
     </div>
-    {% if on_leave %}
-    <div class="onleave-list">
-        {% for it in on_leave %}
-        <a class="onleave-item" href="{{ url_for('drivers.show_driver', driver_id=it.driver.uuid) }}">
-            <span class="avatar avatar--sm">{{ (it.driver.first_name[0] ~ it.driver.last_name[0]) | upper }}</span>
-            <span class="onleave-name">{{ it.driver.full_name }}</span>
-            <span class="badge badge--{{ 'soon' if it.kind.value == 'sick' else 'ok' }}">{{ kind_labels.get(it.kind.value, it.kind.value) }}</span>
-            <span class="muted mono onleave-until">{{ _('until') }} {{ it.end_date }}</span>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <p class="empty">{{ _('Nobody is on leave today.') }}</p>
-    {% endif %}
-</section>
 
-{# --- Own-style month timeline — swapped in place on month navigation (HTMX) --- #}
-<div id="fleet-month">
-    {% include "vacations/_fleet_month.html" %}
+    {# ---------------- TOP CARDS ---------------- #}
+    <div class="vacp-topcards">
+
+        {# Google Calendar connection (reuses the existing OAuth account). #}
+        <div class="panel panel--pad info-card">
+            <div class="info-card-head">
+                <div class="info-card-title">{{ _('Google Calendar') }}</div>
+                {% if last_sync_at %}<div class="info-card-meta">{{ _('last sync') }} {{ last_sync_at.strftime('%Y-%m-%d %H:%M') }}</div>{% endif %}
+            </div>
+            <div class="gcal-block">
+                <div class="gcal-badge">📅</div>
+                <div class="gcal-content">
+                    {% if connected %}
+                    <div class="gcal-status is-on">{{ _('Connected') }}</div>
+                    <div class="gcal-email">{{ account_email or '—' }}</div>
+                    {% else %}
+                    <div class="gcal-status is-off">{{ _('Not connected') }}</div>
+                    <div class="gcal-email">{{ _('Connect to sync leaves.') }}</div>
+                    {% endif %}
+                </div>
+                <div class="gcal-actions">
+                    {% if current_user.is_admin %}
+                    {% if google_configured %}
+                    <a class="btn btn--ghost btn--sm" href="{{ url_for('vacations.google_connect') }}">{{ _('Reconnect') if connected else _('Connect') }}</a>
+                    {% endif %}
+                    <a class="btn btn--ghost btn--sm" href="{{ url_for('settings.index') }}">{{ _('Settings') }}</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Who is on leave today. #}
+        <div class="panel panel--pad info-card">
+            <div class="info-card-head">
+                <div class="info-card-title">{{ _('On leave today') }} <span class="muted">({{ on_leave|length }})</span></div>
+                <div class="info-card-meta">{{ today }}</div>
+            </div>
+            {% if on_leave %}
+            <div class="today-list">
+                {% for it in on_leave %}
+                <a class="today-item" href="{{ url_for('drivers.show_driver', driver_id=it.driver.uuid) }}">
+                    <span class="avatar avatar--sm">{{ initials(it.driver) }}</span>
+                    <span class="today-name">{{ it.driver.full_name }}</span>
+                    <span class="today-type {{ kind_class.get(it.kind.value, 'annual') }}">{{ kind_labels.get(it.kind.value, it.kind.value) }}</span>
+                    <span class="today-until">{{ _('until') }} {{ it.end_date.strftime('%m-%d') }}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="empty">{{ _('Nobody is on leave today.') }}</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+    {# ---------------- GANTT TIMELINE (shared fleet component) ---------------- #}
+    <div id="fleet-month">
+        {% include "vacations/_fleet_month.html" %}
+    </div>
+
+    {# ---------------- ALL VACATIONS (shared module table) ---------------- #}
+    <div class="section-head">
+        <div class="section-title">{{ _('All leaves') }} <span class="muted">{{ overview.year }}</span></div>
+        <div class="section-controls">
+            <input class="input vacp-search" type="search" data-vac-search
+                   placeholder="{{ _('Search by driver…') }}">
+            <button type="button" class="filter-chip is-active" data-vac-filter="all">{{ _('All') }} · {{ overview.entries|length }}</button>
+            <button type="button" class="filter-chip" data-vac-filter="active">{{ _('Active') }}</button>
+            <button type="button" class="filter-chip" data-vac-filter="planned">{{ _('Planned') }}</button>
+            <button type="button" class="filter-chip" data-vac-filter="completed">{{ _('Completed') }}</button>
+        </div>
+    </div>
+
+    {% with entries = overview.entries, show_driver = true, scope = 'fleet', vac_month = calendar_month %}
+    {% include "vacations/_leaves_table.html" %}
+    {% endwith %}
+
+    {# ---------------- DRIVER BALANCES (fleet-only) ---------------- #}
+    <div class="section-head">
+        <div class="section-title">{{ _('Leave balance by driver') }} <span class="muted">{{ overview.year }}</span></div>
+    </div>
+
+    <div class="panel table-scroll">
+        <table class="data-table vacp-table">
+            <thead>
+                <tr>
+                    <th>{{ _('Driver') }}</th>
+                    <th>{{ _('Entitled') }}</th>
+                    <th>{{ _('Used') }}</th>
+                    <th>{{ _('Planned') }}</th>
+                    <th>{{ _('Remaining') }}</th>
+                    <th>{{ _('Sick (L4)') }}</th>
+                    <th class="right">{{ _('Actions') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for b in overview.balances %}
+                {% set pct = (b.used / b.entitled * 100) if b.entitled else 0 %}
+                {% set lvl = 'low' if b.remaining <= 3 else ('mid' if b.remaining <= 8 else 'high') %}
+                <tr>
+                    <td>
+                        <a class="driver-cell" href="{{ url_for('drivers.show_driver', driver_id=b.driver.uuid) }}">
+                            <span class="avatar avatar--sm">{{ initials(b.driver) }}</span>
+                            <span class="driver-cell__name">{{ b.driver.full_name }}</span>
+                        </a>
+                    </td>
+                    <td><span class="balance-text">{{ b.entitled }}</span></td>
+                    <td>
+                        <span class="balance-bar"><span class="fill {{ lvl }}" style="width:{{ [pct, 100] | min }}%"></span></span>
+                        <span class="balance-text">{{ b.used }} / {{ b.entitled }}</span>
+                    </td>
+                    <td><span class="balance-text">{{ b.planned }}</span></td>
+                    <td><span class="balance-text balance-text--{{ lvl }}">{{ b.remaining }}</span></td>
+                    <td><span class="balance-text">{{ b.sick }}</span></td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="btn-rowlink" href="{{ url_for('drivers.show_driver', driver_id=b.driver.uuid, _anchor='vacations') }}">{{ _('History') }}</a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+{# ---------------- ADD / EDIT MODAL (shared module) ---------------- #}
+{% if can_edit %}
+{% with add_action = url_for('vacations.fleet_add_leave'), show_driver_select = true, vac_month = calendar_month, gcal_note = connected %}
+{% include "vacations/_leave_modal.html" %}
+{% endwith %}
+{% endif %}
 {% endblock %}

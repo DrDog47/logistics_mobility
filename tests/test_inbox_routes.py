@@ -61,18 +61,52 @@ def test_recognize_all_returns_entries_concurrently(app, client, tmp_path):
         assert "dz-entry" in body
 
 
-def test_recognize_one_unrecognized_format_is_flagged_not_entered(app, client, tmp_path):
+def test_locked_entry_unlocks_when_triggers_cleared(app, client, tmp_path):
+    """A non-trigger entry locked behind a pending passport carries the
+    `triggersCleared` listener so it re-renders unlocked once the passport saves."""
     with app.app_context():
         _admin_login(app, client)
-        # Recognisable file type, but the filename carries no PRD document type.
+        _seed_inbox(
+            app, tmp_path,
+            "Ivan_Ivanov_Passport_2030-05-12.pdf",   # trigger (pending)
+            "Petr_Petrov_Visa_2024-06-01_2026-06-01.pdf",  # locked behind it
+        )
+        resp = client.post("/documents/inbox/recognize", headers={"HX-Request": "true"})
+        body = resp.data.decode()
+        assert "dz-entry--locked" in body          # the visa is locked
+        assert "triggersCleared" in body           # …and listens to unlock
+
+
+def test_recognize_one_unclassified_supported_file_becomes_review_entry(app, client, tmp_path):
+    with app.app_context():
+        _admin_login(app, client)
+        # Readable type (PDF) but the recognizer can't classify it → instead of
+        # dropping it, it becomes a confirm entry flagged yellow for manual review.
         _seed_inbox(app, tmp_path, "random_scan.pdf")
         resp = client.post(
             "/documents/inbox/recognize-one",
             data={"filename": "random_scan.pdf"},
         )
         assert resp.status_code == 200
+        assert resp.headers["X-Doc-Format"] == "recognized"
+        body = resp.data.decode()
+        assert "dz-entry" in body
+        assert "dz-entry--review" in body  # yellow "needs manual check" state
+
+
+def test_recognize_one_unsupported_format_is_flagged_not_entered(app, client, tmp_path):
+    with app.app_context():
+        _admin_login(app, client)
+        # Unsupported file type — never fed to the recognizer; stays in the inbox
+        # flagged, with no confirm entry.
+        _seed_inbox(app, tmp_path, "random_scan.txt")
+        resp = client.post(
+            "/documents/inbox/recognize-one",
+            data={"filename": "random_scan.txt"},
+        )
+        assert resp.status_code == 200
         assert resp.headers["X-Doc-Format"] == "unrecognized"
-        assert resp.data == b""  # no entry — the file stays in the inbox, flagged
+        assert resp.data == b""
 
 
 def test_recognize_one_rejects_unknown_filename(app, client, tmp_path):
@@ -329,7 +363,9 @@ def test_discard_removes_file_and_entry(app, client, tmp_path):
         )
         assert resp.status_code == 200
         assert resp.data == b""  # entry swapped out
-        assert resp.headers["HX-Trigger"] == "inboxChanged"
+        # Discarding the last passport clears the §8.4 gate → also unlocks entries.
+        assert "inboxChanged" in resp.headers["HX-Trigger"]
+        assert "triggersCleared" in resp.headers["HX-Trigger"]
         assert not (inbox_dir() / "Ivan_Ivanov_Passport.pdf").exists()
 
 

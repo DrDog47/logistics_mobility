@@ -69,10 +69,14 @@
                     {% set ext = (name.rsplit('.', 1) | last | lower) if '.' in name else '' %}
                     {% set view_url = url_for('documents.download_driver_file', file_id=file.uuid) %}
                     {% set size = stored_file_size(file.file_link) %}
+                    {% set is_img = ext in ['jpg','jpeg','png','gif','webp'] %}
+                    {% set is_pdf = ext == 'pdf' %}
                     <div class="file-card">
-                        <a class="file-thumb {{ 'pdf' if ext == 'pdf' else ('jpg' if ext in ['jpg','jpeg','png','gif','webp'] else 'doc') }}"
+                        <a class="file-thumb {{ 'pdf' if is_pdf else ('jpg' if is_img else 'doc') }}{{ ' has-preview' if (is_img or is_pdf) }}"
                            href="{{ view_url }}" target="_blank" rel="noopener" title="{{ name }}">
-                            <span class="ext">{{ ext | upper or 'FILE' }}</span>
+                            {% if is_img %}<img class="file-thumb__media" src="{{ view_url }}" alt="{{ name }}" loading="lazy">
+                            {% elif is_pdf %}<object class="file-thumb__media" data="{{ view_url }}#toolbar=0&navpanes=0&scrollbar=0&view=FitH" type="application/pdf"></object>
+                            {% else %}<span class="ext">{{ ext | upper or 'FILE' }}</span>{% endif %}
                         </a>
                         <div class="file-info">
                             <div class="file-name">{{ name }}</div>
@@ -99,10 +103,14 @@
                     {% for link in doc.scan_links %}
                     {% set name = link.split('/') | last %}
                     {% set ext = (name.rsplit('.', 1) | last | lower) if '.' in name else '' %}
+                    {% set is_img = ext in ['jpg','jpeg','png','gif','webp'] %}
+                    {% set is_pdf = ext == 'pdf' %}
                     <div class="file-card">
-                        <a class="file-thumb {{ 'pdf' if ext == 'pdf' else ('jpg' if ext in ['jpg','jpeg','png','gif','webp'] else 'doc') }}"
+                        <a class="file-thumb {{ 'pdf' if is_pdf else ('jpg' if is_img else 'doc') }}{{ ' has-preview' if (is_img or is_pdf) }}"
                            href="{{ link }}" target="_blank" rel="noopener" title="{{ name }}">
-                            <span class="ext">{{ ext | upper or 'FILE' }}</span>
+                            {% if is_img %}<img class="file-thumb__media" src="{{ link }}" alt="{{ name }}" loading="lazy">
+                            {% elif is_pdf %}<object class="file-thumb__media" data="{{ link }}#toolbar=0&navpanes=0&scrollbar=0&view=FitH" type="application/pdf"></object>
+                            {% else %}<span class="ext">{{ ext | upper or 'FILE' }}</span>{% endif %}
                         </a>
                         <div class="file-info">
                             <div class="file-name">{{ name }}</div>

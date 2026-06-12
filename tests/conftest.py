@@ -20,3 +20,13 @@ def app():
 @pytest.fixture
 def client(app):
     return app.test_client()
+
+
+@pytest.fixture(autouse=True)
+def _clear_recognition_cache():
+    """Reset the inbox recognition cache so it never leaks between tests."""
+    from app.docs.pipeline import clear_recognition_cache
+
+    clear_recognition_cache()
+    yield
+    clear_recognition_cache()

@@ -46,13 +46,13 @@ from app.docs.pipeline import (
     TRIGGER_TYPES,
     RecognizedFile,
     inbox_has_pending_trigger,
+    is_confirmable,
     is_known_format,
     is_recognizable_file,
     is_trigger,
     list_all_inbox_files,
     list_inbox_files,
     pending_trigger_count,
-    recognize_file,
     recognize_paths_async,
     sort_triggers_first,
 )
@@ -253,7 +253,9 @@ def recognize_inbox_files():
     recognizer = get_recognizer()
     paths = list_inbox_files()
     results = asyncio.run(recognize_paths_async(recognizer, paths))
-    recognized = [i for i in results if is_known_format(i)]
+    # Every readable file becomes an entry; ones the recognizer couldn't classify
+    # are kept and flagged for manual review (yellow) rather than dropped.
+    recognized = [i for i in results if is_confirmable(i)]
     entries = _entry_pairs(sort_triggers_first(recognized))
     pending = pending_trigger_count([i for _, i in entries])
     if request.headers.get("HX-Request"):
@@ -294,10 +296,14 @@ def recognize_inbox_one():
     match = next((p for p in list_all_inbox_files() if p.name == filename), None)
     if match is None:
         abort(404)
-    item = recognize_file(match)
-    # Unrecognised format — keep the file in the inbox, flagged; never make it a
-    # confirmation entry (§8.2).
-    if not is_known_format(item):
+    # Recognise via the async path (real awaited LLM I/O), same as "Recognize all"
+    # — just a batch of one. The confirmation entry is built below, only after the
+    # result has been fetched. Runs on its own event loop (sync WSGI view).
+    recognizer = get_recognizer()
+    item = asyncio.run(recognize_paths_async(recognizer, [match]))[0]
+    # Unsupported file format — never fed to the recognizer; keep it in the inbox,
+    # flagged, and don't make it a confirmation entry (§8.2).
+    if not is_confirmable(item):
         response = make_response("")
         response.headers["X-Doc-Format"] = "unrecognized"
         return response
@@ -385,7 +391,11 @@ def discard_inbox_entry():
     if match is not None:
         match.unlink()
     response = make_response("")
-    response.headers["HX-Trigger"] = "inboxChanged"
+    events = "inboxChanged"
+    # Discarding the last passport / technical passport also clears the §8.4 gate.
+    if not inbox_has_pending_trigger():
+        events += ", triggersCleared"
+    response.headers["HX-Trigger"] = events
     return response
 
 
@@ -559,7 +569,12 @@ def apply_inbox():
             filename=submitted.filename if submitted else "",
         )
     )
-    response.headers["HX-Trigger"] = "driversChanged, documentsChanged"
+    events = "driversChanged, documentsChanged"
+    # Once the last passport / technical passport leaves the inbox, the §8.4 gate
+    # is over: tell the still-locked entries to unlock (re-render editable).
+    if not inbox_has_pending_trigger():
+        events += ", triggersCleared"
+    response.headers["HX-Trigger"] = events
     return response
 
 

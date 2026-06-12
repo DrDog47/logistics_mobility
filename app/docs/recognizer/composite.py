@@ -45,14 +45,17 @@ class TwoStageRecognizer(DocumentRecognizer):
             content=content, mime_type=mime_type, filename=filename
         )
 
-        # Stage one drew a blank — don't spend the heavier extraction call.
-        if not ident.recognized or not ident.document_type:
+        # Stage one couldn't classify the document. Instead of dropping it, pass
+        # it through as a recognised-but-untyped result so it still becomes a
+        # confirm entry — the operator sets the type and fields by hand (the UI
+        # flags it for manual review). No type means no typed extraction to run.
+        if not ident.document_type:
             return RecognitionResult(
                 recognized=False,
                 entity_type=ident.entity_type,
-                document_type=ident.document_type,
+                document_type=None,
                 confidence=ident.confidence,
-                note=ident.note or "identification stage could not classify the document",
+                note=ident.note or "could not classify automatically — review manually",
                 provider=ident.provider,
             )
 
@@ -84,13 +87,14 @@ class TwoStageRecognizer(DocumentRecognizer):
         ident = await self._identifier.aidentify(
             content=content, mime_type=mime_type, filename=filename
         )
-        if not ident.recognized or not ident.document_type:
+        # Couldn't classify — pass through untyped for manual review (see recognize()).
+        if not ident.document_type:
             return RecognitionResult(
                 recognized=False,
                 entity_type=ident.entity_type,
-                document_type=ident.document_type,
+                document_type=None,
                 confidence=ident.confidence,
-                note=ident.note or "identification stage could not classify the document",
+                note=ident.note or "could not classify automatically — review manually",
                 provider=ident.provider,
             )
         result = await self._extractor.aextract(

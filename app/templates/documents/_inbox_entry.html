@@ -21,8 +21,11 @@
 {% set st = document_status(r.document_type, r.end_date) if (r and r.document_type and r.end_date) else None %}
 {% set expired = st and st.level == 'expired' %}
 {% set fe = field_errors if field_errors is defined else (entry_confirm_errors(r, selected_driver) if r else {}) %}
+{# Recognizer couldn't classify the document → highlight the whole entry yellow
+   for manual review (set the type / check fields by hand). #}
+{% set review = review if review is defined else needs_manual_review(item) %}
 {% set preview_url = url_for('documents.preview_inbox_file', filename=item.filename) %}
-<form class="dz-entry {% if locked %}dz-entry--locked{% elif (error is defined and error) or fe %}dz-entry--error{% elif expired %}dz-entry--warn{% elif validated %}dz-entry--ok{% endif %}"
+<form class="dz-entry {% if locked %}dz-entry--locked{% elif review %}dz-entry--review{% elif (error is defined and error) or fe %}dz-entry--error{% elif expired %}dz-entry--warn{% elif validated %}dz-entry--ok{% endif %}"
       id="entry-{{ uid }}"
       hx-post="{{ url_for('documents.apply_inbox') }}"
       hx-target="#entry-{{ uid }}"
@@ -30,6 +33,19 @@
       hx-confirm="{{ _('Save this document (create/update the driver if needed)?') }}"
       hx-disinherit="hx-confirm">
     <input type="hidden" name="e{{ uid }}_filename" value="{{ item.filename }}">
+
+    {% if locked %}
+    {# §8.4 gate: once the passports / technical passports finish saving, the
+       server fires `triggersCleared`; re-render this entry unlocked (via the
+       validate endpoint, which returns it with locked=False) keeping its current
+       field values — and now able to bind to the just-created driver. #}
+    <div hidden
+         hx-post="{{ url_for('documents.validate_inbox_entry') }}"
+         hx-trigger="triggersCleared from:body"
+         hx-include="closest form"
+         hx-target="#entry-{{ uid }}"
+         hx-swap="outerHTML"></div>
+    {% endif %}
 
     <div class="dz-entry__layout">
         <div class="dz-entry__thumb">
@@ -43,6 +59,8 @@
                 <span class="pill pill--inactive">🔒 {{ _('locked') }}</span>
                 {% elif error is defined and error %}
                 <span class="pill pill--inactive">{{ _('not saved') }}: {{ error }}</span>
+                {% elif review %}
+                <span class="pill pill--warn">{{ _('needs manual check') }}</span>
                 {% elif validated and not fe %}
                 <span class="pill pill--approved">{{ _('valid') }}</span>
                 {% elif not (r and r.recognized) %}
@@ -53,6 +71,10 @@
             {% if locked %}
             <p class="flash flash--warning">
                 {{ _('Locked — process passports and technical passports first; this document can only be saved after them.') }}
+            </p>
+            {% elif review %}
+            <p class="flash flash--warning">
+                {{ _('Could not classify this document automatically — set the document type and check the fields, then save.') }}
             </p>
             {% elif fe %}
             <p class="flash flash--error">

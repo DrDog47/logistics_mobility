@@ -1,6 +1,7 @@
 <table id="drivers-table" class="table">
     <thead>
         <tr>
+            <th class="num-col">#</th>
             <th>{{ _('Name') }}</th>
             <th>{{ _('Nationality') }}</th>
             <th>{{ _('Organisation') }}</th>
@@ -14,6 +15,7 @@
     <tbody>
         {% for d in drivers %}
         <tr>
+            <td class="row-num">{{ loop.index }}</td>
             <td>
                 <a href="{{ url_for('drivers.show_driver', driver_id=d.id) }}">
                     {{ d.full_name }}
@@ -57,7 +59,7 @@
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="8" class="empty">{{ _('No drivers found') }}</td></tr>
+        <tr><td colspan="9" class="empty">{{ _('No drivers found') }}</td></tr>
         {% endfor %}
     </tbody>
 </table>

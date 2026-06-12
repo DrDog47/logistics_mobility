@@ -1,0 +1,75 @@
+{# Reusable add/edit leave modal (vacations module). Driven by vacations.js,
+   which keys off the data-* hooks below. Caller sets:
+     leave_form          a LeaveEntryForm / FleetLeaveForm (for kind choices, and
+                         driver_uuid when show_driver_select)
+     add_action          URL the *add* form posts to
+     show_driver_select  bool — render the driver <select> (fleet) or omit it
+                         (per-driver tab, where the driver is fixed)
+     vac_month           'YYYY-MM' kept across the redirect
+     gcal_note           bool — show the "mirrored to Google Calendar" hint
+     account_email       shown in that hint
+   Edit reuses this same form; the row's Edit button supplies the action URL and
+   field values via data-* attributes. #}
+{% set kind_class = {
+  'annual': 'annual', 'on_demand': 'demand', 'sick': 'sick',
+  'unpaid': 'unpaid', 'other': 'unpaid'} %}
+<div class="vac-modal" id="vac-modal" hidden
+     data-title-add="{{ _('Add leave') }}" data-title-edit="{{ _('Edit leave') }}">
+    <div class="vac-modal__box" role="dialog" aria-modal="true" aria-labelledby="vac-modal-title">
+        <div class="vac-modal__head">
+            <div class="vac-modal__title" id="vac-modal-title">{{ _('Add leave') }}</div>
+            <button type="button" class="vac-modal__close" data-vac-close aria-label="{{ _('Close') }}">×</button>
+        </div>
+        <form method="post" id="vac-form" action="{{ add_action }}" data-add-action="{{ add_action }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="vac_month" value="{{ vac_month }}">
+            <div class="vac-modal__body">
+
+                {% if show_driver_select %}
+                <div class="form-field" data-vac-driver-field>
+                    <label class="form-label">{{ _('Driver') }}</label>
+                    {{ leave_form.driver_uuid(class="input", id="vac-driver-select") }}
+                    <div class="vac-driver-static" hidden data-vac-driver-static></div>
+                </div>
+                {% endif %}
+
+                <div class="form-field">
+                    <label class="form-label">{{ _('Type') }}</label>
+                    <div class="type-radio-group">
+                        {% for val, label in leave_form.kind.choices %}
+                        <label class="type-radio {{ kind_class.get(val, 'annual') }}{{ ' is-selected' if val == 'annual' }}" data-type-radio>
+                            <input type="radio" name="kind" value="{{ val }}" {{ 'checked' if val == 'annual' }}>
+                            <span class="dot"></span> {{ label }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-field">
+                        <label class="form-label">{{ _('Start date') }}</label>
+                        <input class="input mono" type="date" name="start_date" id="vac-start" required>
+                    </div>
+                    <div class="form-field">
+                        <label class="form-label">{{ _('End date') }}</label>
+                        <input class="input mono" type="date" name="end_date" id="vac-end" required>
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label class="form-label">{{ _('Note') }}</label>
+                    <input class="input" name="note" id="vac-note" maxlength="500">
+                </div>
+
+                {% if gcal_note %}
+                <div class="vac-gcal-note">📅 {{ _('Saved leaves are mirrored to Google Calendar') }} (<strong>{{ account_email }}</strong>)</div>
+                {% endif %}
+
+            </div>
+            <div class="vac-modal__foot">
+                <button type="button" class="btn btn--ghost" data-vac-close>{{ _('Cancel') }}</button>
+                <button type="submit" class="btn btn--primary">{{ _('Save') }}</button>
+            </div>
+        </form>
+    </div>
+</div>

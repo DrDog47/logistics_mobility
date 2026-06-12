@@ -336,13 +336,50 @@ def build_panel_context(
     year: int | None = None,
     month: int | None = None,
 ) -> dict:
-    """Everything the vacations tab template needs for one driver."""
+    """Everything the per-driver Vacations tab needs — the same data the fleet
+    page shows, scoped to one driver: the year's leaves (with status), the
+    annual-leave balance (used vs. planned split) + sick tally, and the
+    single-driver Gantt timeline (reusing ``build_fleet_month``).
+    """
     today = date.today()
     year = year or today.year
     month = month or today.month
+    start, end = _year_bounds(year)
 
-    balance = leave_balance(driver.uuid, year, session)
-    account = get_account(session)
+    rows = session.execute(
+        select(LeaveEntry)
+        .where(
+            LeaveEntry.driver_uuid == driver.uuid,
+            LeaveEntry.is_deleted.is_(False),
+            LeaveEntry.start_date >= start,
+            LeaveEntry.start_date <= end,
+        )
+        .order_by(LeaveEntry.start_date.desc())
+    ).scalars().all()
+
+    used = planned = sick = 0
+    entries: list[dict] = []
+    for e in rows:
+        entries.append({"entry": e, "driver": driver, "status": entry_status(e, today)})
+        if e.kind in LIMIT_KINDS:
+            if e.start_date <= today:
+                used += e.counted_days
+            else:
+                planned += e.counted_days
+        elif e.kind == LeaveKind.SICK:
+            sick += e.counted_days
+
+    ent = get_entitlement(driver.uuid, year, session)
+    entitled = ent.entitled_days if ent else _default_base_days()
+    balance = {
+        "entitled": entitled,
+        "used": used,
+        "planned": planned,
+        "remaining": entitled - used - planned,
+        "sick": sick,
+        "entitlement": ent,
+    }
+
     prev_y, prev_m = _shift_month(year, month, -1)
     next_y, next_m = _shift_month(year, month, +1)
 
@@ -354,12 +391,95 @@ def build_panel_context(
         "prev_month": f"{prev_y:04d}-{prev_m:02d}",
         "next_month": f"{next_y:04d}-{next_m:02d}",
         "balance": balance,
-        "entries": list_entries(driver.uuid, session, year=year),
-        "weeks": build_calendar(driver.uuid, year, month, session),
-        "connected": account is not None and account.token is not None,
-        "account_email": account.account_email if account else None,
-        "last_sync_at": account.last_sync_at if account else None,
+        "entries": entries,
+        "fleet": build_fleet_month(session, year, month, driver=driver),
     }
+
+
+def entry_status(entry: LeaveEntry, today: date | None = None) -> str:
+    """Lifecycle status of a leave: 'completed' | 'active' | 'planned'."""
+    today = today or date.today()
+    if entry.end_date < today:
+        return "completed"
+    if entry.start_date <= today:
+        return "active"
+    return "planned"
+
+
+def vacations_overview(session: Session, year: int) -> dict:
+    """Everything the fleet vacations page lists below the timeline.
+
+    Returns the full leave list for ``year`` (each row with its driver and
+    lifecycle status), the active roster, and a per-driver annual-leave balance
+    split into already-used vs. still-planned days plus the sick (L4) tally.
+    """
+    from app.drivers.models import Driver
+
+    today = date.today()
+    start, end = _year_bounds(year)
+
+    rows = session.execute(
+        select(LeaveEntry, Driver)
+        .join(Driver, Driver.uuid == LeaveEntry.driver_uuid)
+        .where(
+            LeaveEntry.is_deleted.is_(False),
+            Driver.is_deleted.is_(False),
+            LeaveEntry.start_date >= start,
+            LeaveEntry.start_date <= end,
+        )
+        .order_by(LeaveEntry.start_date.desc())
+    ).all()
+
+    drivers = session.execute(
+        select(Driver)
+        .where(Driver.is_deleted.is_(False))
+        .order_by(Driver.last_name, Driver.first_name)
+    ).scalars().all()
+
+    entitlements = {
+        e.driver_uuid: e
+        for e in session.execute(
+            select(LeaveEntitlement).where(
+                LeaveEntitlement.year == year,
+                LeaveEntitlement.is_deleted.is_(False),
+            )
+        ).scalars().all()
+    }
+
+    # Aggregate annual (used vs. planned) and sick days per driver in one pass.
+    agg: dict = {d.uuid: {"used": 0, "planned": 0, "sick": 0} for d in drivers}
+    entries: list[dict] = []
+    for entry, driver in rows:
+        entries.append(
+            {"entry": entry, "driver": driver, "status": entry_status(entry, today)}
+        )
+        bucket = agg.get(driver.uuid)
+        if bucket is None:
+            continue
+        if entry.kind in LIMIT_KINDS:
+            key = "used" if entry.start_date <= today else "planned"
+            bucket[key] += entry.counted_days
+        elif entry.kind == LeaveKind.SICK:
+            bucket["sick"] += entry.counted_days
+
+    default_days = _default_base_days()
+    balances: list[dict] = []
+    for d in drivers:
+        ent = entitlements.get(d.uuid)
+        entitled = ent.entitled_days if ent else default_days
+        a = agg[d.uuid]
+        balances.append(
+            {
+                "driver": d,
+                "entitled": entitled,
+                "used": a["used"],
+                "planned": a["planned"],
+                "remaining": entitled - a["used"] - a["planned"],
+                "sick": a["sick"],
+            }
+        )
+
+    return {"year": year, "entries": entries, "balances": balances, "drivers": drivers}
 
 
 def drivers_on_leave(session: Session, on_date: date | None = None) -> list[dict]:
@@ -390,13 +510,23 @@ def drivers_on_leave(session: Session, on_date: date | None = None) -> list[dict
     return list(seen.values())
 
 
-def build_fleet_month(session: Session, year: int, month: int) -> dict:
-    """Fleet-wide month timeline (own-style replacement for the Google embed).
+def build_fleet_month(
+    session: Session, year: int, month: int, span_months: int = 3, driver=None
+) -> dict:
+    """Fleet-wide timeline (own-style replacement for the Google embed).
+
+    Spans ``span_months`` calendar months starting at (year, month) — three by
+    default, so the diagram shows the selected month plus the next two. Prev/next
+    still step a single month, sliding the window.
 
     One row per active (non-deleted) driver — the full roster shows by default,
-    even drivers with no leave this month, so the date scale always renders. Each
-    row carries the bar *segments* (start column / span within the month). Days
-    carry weekend/holiday/today flags for column shading.
+    even drivers with no leave in the window, so the date scale always renders.
+    Each row carries the bar *segments* (start column / span within the window).
+    Days carry weekend/holiday/today/month-start flags for column shading, and
+    ``months`` describes the month bands (label + column span) above the scale.
+
+    Pass ``driver`` to restrict the timeline to a single driver's row — used by
+    the per-driver Vacations tab, which reuses this exact component.
 
     Data is the synced ``LeaveEntry`` set — manual leaves plus the ones pulled
     from the connected Google Calendar — so the view reflects the calendar
@@ -404,9 +534,14 @@ def build_fleet_month(session: Session, year: int, month: int) -> dict:
     """
     from app.drivers.models import Driver
 
+    span_months = max(1, span_months)
     first = date(year, month, 1)
-    last = date(year, month, _calendar.monthrange(year, month)[1])
-    holidays = get_holidays(year, session)
+    end_y, end_m = _shift_month(year, month, span_months - 1)
+    last = date(end_y, end_m, _calendar.monthrange(end_y, end_m)[1])
+
+    holidays: set[date] = set()
+    for yr in range(first.year, last.year + 1):
+        holidays |= get_holidays(yr, session)
     today = date.today()
 
     days: list[dict] = []
@@ -420,22 +555,39 @@ def build_fleet_month(session: Session, year: int, month: int) -> dict:
                 "weekend": d.weekday() >= 5,
                 "holiday": d in holidays,
                 "today": d == today,
+                "month_start": d.day == 1,
             }
         )
         d += timedelta(days=1)
 
+    # Month bands above the day scale: each spans its days as grid columns
+    # (1-based from the window start), so a label sits over its block.
+    months: list[dict] = []
+    band_y, band_m, col = year, month, 1
+    for _ in range(span_months):
+        ndays = _calendar.monthrange(band_y, band_m)[1]
+        months.append(
+            {"month_date": date(band_y, band_m, 1), "start_col": col, "span": ndays}
+        )
+        col += ndays
+        band_y, band_m = _shift_month(band_y, band_m, 1)
+
     # Full roster as rows, name-ordered (mirrors the drivers list); the dict keeps
-    # insertion order so the rows stay sorted without a second pass.
-    drivers = session.execute(
-        select(Driver)
-        .where(Driver.is_deleted.is_(False))
-        .order_by(Driver.last_name, Driver.first_name)
-    ).scalars().all()
+    # insertion order so the rows stay sorted without a second pass. When a single
+    # ``driver`` is given, the timeline shows just that one row.
+    if driver is not None:
+        drivers = [driver]
+    else:
+        drivers = session.execute(
+            select(Driver)
+            .where(Driver.is_deleted.is_(False))
+            .order_by(Driver.last_name, Driver.first_name)
+        ).scalars().all()
     by_driver: dict = {
         drv.uuid: {"driver": drv, "segments": []} for drv in drivers
     }
 
-    entries = session.execute(
+    entry_stmt = (
         select(LeaveEntry)
         .where(
             LeaveEntry.is_deleted.is_(False),
@@ -443,7 +595,10 @@ def build_fleet_month(session: Session, year: int, month: int) -> dict:
             LeaveEntry.end_date >= first,
         )
         .order_by(LeaveEntry.start_date)
-    ).scalars().all()
+    )
+    if driver is not None:
+        entry_stmt = entry_stmt.where(LeaveEntry.driver_uuid == driver.uuid)
+    entries = session.execute(entry_stmt).scalars().all()
 
     for entry in entries:
         bucket = by_driver.get(entry.driver_uuid)
@@ -478,6 +633,7 @@ def build_fleet_month(session: Session, year: int, month: int) -> dict:
         "this_month": f"{today.year:04d}-{today.month:02d}",
         "days": days,
         "num_days": len(days),
+        "months": months,
         "rows": driver_rows,
     }
 

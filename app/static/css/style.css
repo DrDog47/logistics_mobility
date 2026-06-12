@@ -447,6 +447,8 @@ h2 { font-size: 16px; }
 .docs-table tbody tr.main-row.expanded > td:first-child { border-left: 3px solid var(--c-accent); padding-left: 11px; }
 
 .row-num { text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--c-text-muted); font-weight: 500; }
+/* Row-number column header (works on the plain .table too, not just .data-table). */
+.table th.num-col { width: 48px; text-align: center; }
 
 .status-pill {
     display: inline-block; padding: 4px 11px; border-radius: 100px;
@@ -496,15 +498,30 @@ h2 { font-size: 16px; }
 }
 .file-card:hover { border-color: var(--c-accent); box-shadow: 0 2px 8px rgba(30, 90, 74, 0.08); }
 .file-thumb {
-    width: 36px; height: 44px; border-radius: 5px; flex-shrink: 0;
+    width: 44px; height: 56px; border-radius: 5px; flex-shrink: 0;
     display: flex; align-items: center; justify-content: center;
     font-family: var(--font-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
-    text-decoration: none; transition: transform 0.1s;
+    text-decoration: none; transition: transform 0.1s; overflow: hidden;
 }
-.file-thumb:hover { transform: scale(1.03); }
+.file-thumb { position: relative; }
+.file-thumb:hover { transform: scale(1.06); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+/* Magnifier overlay on hover — signals the thumbnail opens a full preview. */
+.file-thumb.has-preview::after {
+    content: "🔍"; position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center; font-size: 14px;
+    background: rgba(30, 90, 74, 0.7); color: #fff;
+    opacity: 0; transition: opacity 0.15s; pointer-events: none;
+}
+.file-thumb.has-preview:hover::after { opacity: 1; }
 .file-thumb.pdf { background: #fdebe7; color: var(--c-error); border: 1px solid #f0c8c8; }
 .file-thumb.jpg, .file-thumb.png { background: var(--c-info-bg); color: var(--c-info); border: 1px solid #d1d9ea; }
 .file-thumb.doc { background: #e8f0fc; color: #2563eb; border: 1px solid #c5d6f0; }
+/* Real first-page/image miniature instead of the extension badge. */
+.file-thumb.has-preview { padding: 0; background: var(--c-surface); }
+.file-thumb__media {
+    width: 100%; height: 100%; object-fit: cover; object-position: top center;
+    display: block; border: 0; pointer-events: none; background: var(--c-surface);
+}
 
 .file-info { flex: 1; min-width: 0; display: flex; align-items: center; gap: 16px; }
 .file-name { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
@@ -573,6 +590,34 @@ h2 { font-size: 16px; }
 .sum-expiry.muted { color: var(--c-text-subtle); }
 .upload-mini-btn { background: var(--c-error); color: #fff; border: none; padding: 3px 10px; border-radius: 5px; font-size: 10px; font-weight: 600; cursor: pointer; font-family: var(--font-sans); text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; }
 
+/* Clickable summary rows jump to the matching document; missing rows scroll to
+   the upload zone. */
+.summary-table tbody tr.sum-link { cursor: pointer; transition: background 0.1s; }
+.summary-table tbody tr.sum-link:hover { background: var(--c-accent-bg); }
+.summary-table tbody tr.missing:hover { background: #fbe9e9; }
+.missing-status {
+    display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px;
+    border-radius: 100px; font-size: 11px; font-weight: 600; color: var(--c-error);
+    background: transparent; border: 1px solid #e8c8c8; cursor: pointer;
+    font-family: var(--font-sans); transition: all 0.15s;
+}
+.missing-status::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.missing-status:hover { background: var(--c-error); color: #fff; border-color: var(--c-error); }
+
+/* Flash a document row after navigating to it from the summary. */
+@keyframes row-highlight-flash {
+    0% { background: var(--c-accent-bg); }
+    100% { background: transparent; }
+}
+.docs-table tr.main-row.row-highlight td { animation: row-highlight-flash 1.8s ease-out; }
+
+/* Flash the upload zone after jumping to it from a missing-document row. */
+@keyframes dropzone-flash {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(30, 90, 74, 0); }
+    30% { box-shadow: 0 0 0 4px rgba(30, 90, 74, 0.25); }
+}
+.dropzone.is-flashing { animation: dropzone-flash 1.6s ease-out; border-color: var(--c-accent); }
+
 /* Tabs */
 .tabs-bar { display: flex; gap: 4px; padding: 0 var(--space-5); border-bottom: 1px solid var(--c-border); overflow-x: auto; }
 .tabs-bar .tab {
@@ -587,7 +632,10 @@ h2 { font-size: 16px; }
 .tabs-bar .tab .count-badge { background: var(--c-border); color: var(--c-text-muted); font-size: 10px; font-weight: 600; padding: 1px 7px; border-radius: 100px; font-family: var(--font-mono); }
 .tabs-bar .tab.is-active .count-badge { background: var(--c-accent-bg); color: var(--c-accent); }
 .tabs-bar .tab .alert-badge { background: var(--c-error); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 100px; font-family: var(--font-mono); }
-.tab-content { padding: var(--space-5); }
+/* Reserve height so switching to a short tab (e.g. History) doesn't collapse
+   the page far enough to clamp the scroll and jump. Paired with the scroll
+   anchoring in documents.js (switchTab). */
+.tab-content { padding: var(--space-5); min-height: 70vh; }
 
 .section-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
 .section-title { font-size: 16px; font-weight: 600; }
@@ -621,7 +669,7 @@ h2 { font-size: 16px; }
 /* ── Sizing & responsive rules ──────────────────────────────────────────────
    Content-sized chips/badges/pills/buttons never wrap; rows of them scroll
    horizontally rather than shrinking; tables scroll inside their card. */
-.pill, .doc-chip-count, .country-flag, .upload-mini-btn,
+.pill, .doc-chip-count, .country-flag, .upload-mini-btn, .missing-status,
 .docs-table .row-actions a, .docs-table .row-actions button,
 .data-table .row-actions button, .file-actions a, .file-actions button,
 .tabs-bar .tab .count-badge, .tabs-bar .tab .alert-badge { white-space: nowrap; }
@@ -896,6 +944,8 @@ ul.plain li { padding: 2px 0; }
 }
 .dz-entry--error { border-color: var(--c-error); background: var(--c-error-bg); }
 .dz-entry--warn { border-color: var(--c-warning); background: var(--c-warning-bg); }
+/* Recognizer couldn't classify it — yellow, awaiting manual type/field entry. */
+.dz-entry--review { border-color: var(--c-warning); background: var(--c-warning-bg); }
 /* Turns green once every edited field passes validation (§8.2). */
 .dz-entry--ok { border-color: var(--c-success); background: var(--c-success-bg); }
 /* Locked until passports / technical passports are processed (§8.4). */
@@ -947,6 +997,11 @@ ul.plain li { padding: 2px 0; }
 .table tr.is-unrecognized > td { background: var(--c-warning-bg); }
 .table tr.is-unrecognized > td:first-child { color: var(--c-warning); }
 .table tr.is-done { opacity: 0.5; }
+/* Recognition queue states: waiting in the queue, then being recognised. */
+.table tr.is-queued > td { background: var(--c-bg); }
+.table tr.is-queued > td:first-child::after { content: " · queued"; color: var(--c-text-subtle); font-size: 11px; }
+.table tr.is-recognizing > td { background: var(--c-accent-bg); }
+.table tr.is-recognizing > td:first-child::after { content: " · recognising…"; color: var(--c-accent); font-size: 11px; }
 
 /* ====================================================== Driver card (FleetOS) */
 
@@ -1212,7 +1267,9 @@ ul.plain li { padding: 2px 0; }
    Day cells are a FIXED width (--day-w), so a cell is the same size in every
    month (28–31 days) and after the page loads — the grid scrolls horizontally
    rather than stretching cells to fill. */
-.vmonth { --name-w: 184px; --day-w: 30px; max-height: 68vh; overflow: auto; scrollbar-gutter: stable; padding-bottom: 4px; }
+/* --cols reserves a constant column count (3 months ≈ 93 days) so the diagram
+   is the same width in every quarter; shorter windows leave trailing blanks. */
+.vmonth { --name-w: 184px; --day-w: 30px; --cols: 93; max-height: 68vh; overflow: auto; scrollbar-gutter: stable; padding-bottom: 4px; }
 .vmonth-row { display: flex; align-items: stretch; min-width: max-content; }
 .vmonth-row + .vmonth-row { border-top: 1px solid var(--c-border); }
 /* Driver name column stays put on horizontal scroll. */
@@ -1225,12 +1282,21 @@ ul.plain li { padding: 2px 0; }
 /* Always reserve 31 day columns so the calendar block is the SAME width every
    month; shorter months (28–30 days) simply leave the trailing columns blank —
    the view never resizes between months. */
-.vmonth-scale, .vmonth-track { flex: 0 0 auto; display: grid; grid-template-columns: repeat(31, var(--day-w)); }
+.vmonth-scale, .vmonth-track, .vmonth-monthscale { flex: 0 0 auto; display: grid; grid-template-columns: repeat(var(--cols, 31), var(--day-w)); }
 .vmonth-track { position: relative; min-height: 34px; }
 
-/* Date scale stays visible while scrolling the driver list vertically. */
-.vmonth-row--head { position: sticky; top: 0; z-index: 3; background: var(--c-surface); }
+/* Month band: one label per month, sticky at the very top of the scroll. */
+.vmonth-row--months { position: sticky; top: 0; z-index: 5; background: var(--c-surface); }
+.vmonth-row--months .vmonth-name { z-index: 6; }
+.vmonth-month { grid-row: 1; padding: 5px 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; text-transform: capitalize; color: var(--c-text); white-space: nowrap; overflow: hidden; border-left: 2px solid var(--c-border-strong); }
+
+/* Date scale stays visible while scrolling the driver list vertically; sits
+   just below the (also sticky) month band. */
+.vmonth-row--head { position: sticky; top: 27px; z-index: 3; background: var(--c-surface); }
 .vmonth-row--head .vmonth-name { z-index: 4; }  /* top-left corner above both axes */
+
+/* Stronger divider where a new month begins. */
+.vmonth-day.is-month-start, .vmonth-cell.is-month-start { border-left: 2px solid var(--c-border-strong); }
 .vmonth-day { text-align: center; padding: 4px 0 6px; font-family: var(--font-mono); border-left: 1px solid var(--c-border); }
 .vmonth-day:last-child { border-right: 1px solid var(--c-border); }
 .vmonth-dnum { display: block; font-size: 12px; color: var(--c-text); }
@@ -1304,6 +1370,107 @@ ul.plain li { padding: 2px 0; }
 .vac-rail .vac-item .meta { line-height: 1.35; }
 .vac-item--sick .vi-icon { background: var(--c-warning-bg); color: var(--c-warning); }
 .vac-item.is-done .vi-icon { background: #f3f1ec; color: var(--c-text-muted); }
+
+/* ============================================================ Vacations page
+   Fleet leave page: head, top cards, all-leaves table, balances, add/edit modal.
+   Scoped under .vac-page so the generic class names don't leak elsewhere. */
+.vac-page .vacp-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 22px; flex-wrap: wrap; }
+.vac-page .vacp-title { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.vac-page .vacp-sub { font-size: 13px; color: var(--c-text-muted); margin-top: 4px; }
+.vac-page .vacp-actions { display: flex; gap: 8px; align-items: center; }
+
+/* Per-driver balance strip on the Vacations tab. */
+.vac-page .vacp-balance { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 20px; }
+@media (max-width: 760px) { .vac-page .vacp-balance { grid-template-columns: repeat(2, 1fr); } }
+
+.vac-page .vacp-topcards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media (max-width: 860px) { .vac-page .vacp-topcards { grid-template-columns: 1fr; } }
+.vac-page .info-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; }
+.vac-page .info-card-title { font-size: 13px; font-weight: 600; }
+.vac-page .info-card-meta { font-size: 11px; color: var(--c-text-muted); font-family: var(--font-mono); white-space: nowrap; }
+
+.vac-page .gcal-block { display: flex; align-items: center; gap: 14px; }
+.vac-page .gcal-badge { width: 44px; height: 44px; background: var(--c-info-bg); border: 1px solid #d6e0f0; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.vac-page .gcal-content { flex: 1; min-width: 0; }
+.vac-page .gcal-status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; margin-bottom: 4px; }
+.vac-page .gcal-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.vac-page .gcal-status.is-on { color: var(--c-success); }
+.vac-page .gcal-status.is-off { color: var(--c-text-muted); }
+.vac-page .gcal-email { font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vac-page .gcal-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+.vac-page .today-list { display: flex; flex-direction: column; gap: 8px; }
+.vac-page .today-item { display: flex; align-items: center; gap: 10px; padding: 7px 12px; background: var(--c-success-bg); border: 1px solid #c8e3d5; border-radius: 8px; color: var(--c-text); }
+.vac-page .today-item:hover { text-decoration: none; border-color: var(--c-success); }
+.vac-page .today-name { font-size: 12px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vac-page .today-type { font-size: 10px; padding: 2px 8px; border-radius: 100px; background: var(--c-surface); border: 1px solid var(--c-border); white-space: nowrap; }
+.vac-page .today-until { font-size: 11px; font-family: var(--font-mono); color: var(--c-text-muted); white-space: nowrap; }
+
+/* Filter chips + search above the all-leaves table. */
+.vac-page .section-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.vac-page .vacp-search { width: 220px; }
+.vac-page .filter-chip { background: var(--c-surface); border: 1px solid var(--c-border-strong); padding: 6px 12px; border-radius: 100px; font-size: 12px; font-weight: 500; cursor: pointer; color: var(--c-text-muted); font-family: var(--font-sans); white-space: nowrap; }
+.vac-page .filter-chip:hover, .vac-page .filter-chip.is-active { border-color: var(--c-accent); color: var(--c-accent); background: var(--c-accent-bg); }
+
+/* Table cell helpers (the base .data-table styles are shared globally). */
+.vac-page .driver-cell { display: inline-flex; align-items: center; gap: 10px; color: var(--c-text); min-width: 0; }
+.vac-page .driver-cell:hover { text-decoration: none; }
+.vac-page .driver-cell:hover .driver-cell__name { text-decoration: underline; }
+.vac-page .driver-cell__name { font-weight: 500; white-space: nowrap; }
+.vac-page .date-cell { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.vac-page .days-cell { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
+
+.vac-page .vac-type-pill { display: inline-block; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 500; border: 1px solid transparent; white-space: nowrap; }
+.vac-page .vac-type-pill.annual { background: var(--c-success-bg); color: var(--c-success); border-color: #c8e3d5; }
+.vac-page .vac-type-pill.demand { background: var(--c-info-bg); color: var(--c-info); border-color: #d1d9ea; }
+.vac-page .vac-type-pill.sick { background: var(--c-error-bg); color: var(--c-error); border-color: #e8c8c8; }
+.vac-page .vac-type-pill.unpaid { background: #f1eef6; color: #6b5b8a; border-color: #cdc2dd; }
+
+.vac-page .vac-status { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 100px; font-size: 11px; font-weight: 500; border: 1px solid transparent; white-space: nowrap; }
+.vac-page .vac-status::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.vac-page .vac-status--active { background: var(--c-accent-bg); color: var(--c-accent); border-color: var(--c-accent); }
+.vac-page .vac-status--planned { background: var(--c-info-bg); color: var(--c-info); border-color: #d1d9ea; }
+.vac-page .vac-status--completed { background: #f3f1ec; color: var(--c-text-muted); border-color: var(--c-border-strong); }
+
+.vac-page .source-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; color: var(--c-text-muted); font-family: var(--font-mono); white-space: nowrap; }
+
+.vac-page .balance-bar { width: 110px; height: 6px; background: #f3f1ec; border-radius: 3px; overflow: hidden; display: inline-block; vertical-align: middle; margin-right: 8px; }
+.vac-page .balance-bar .fill { display: block; height: 100%; border-radius: 3px; background: var(--c-accent); }
+.vac-page .balance-bar .fill.high { background: var(--c-success); }
+.vac-page .balance-bar .fill.mid { background: var(--c-warning); }
+.vac-page .balance-bar .fill.low { background: var(--c-error); }
+.vac-page .balance-text { font-family: var(--font-mono); font-size: 12px; }
+.vac-page .balance-text--mid { color: var(--c-warning); font-weight: 600; }
+.vac-page .balance-text--low { color: var(--c-error); font-weight: 600; }
+.vac-page .balance-text--high { color: var(--c-success); font-weight: 600; }
+.vac-page .btn-rowlink { background: var(--c-surface); border: 1px solid var(--c-border-strong); padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 500; color: var(--c-text); }
+.vac-page .btn-rowlink:hover { color: var(--c-accent); border-color: var(--c-accent); text-decoration: none; }
+
+/* Add / edit modal. */
+.vac-modal { position: fixed; inset: 0; background: rgba(26, 29, 35, 0.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 24px; }
+.vac-modal[hidden] { display: none; }
+.vac-modal__box { background: var(--c-surface); border-radius: 14px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+.vac-modal__head { display: flex; justify-content: space-between; align-items: center; padding: 16px 22px; border-bottom: 1px solid var(--c-border); }
+.vac-modal__title { font-size: 16px; font-weight: 600; }
+.vac-modal__close { background: transparent; border: none; width: 28px; height: 28px; border-radius: 6px; font-size: 20px; line-height: 1; cursor: pointer; color: var(--c-text-muted); }
+.vac-modal__close:hover { background: #f3f1ec; color: var(--c-text); }
+.vac-modal__body { padding: 20px 22px; }
+.vac-modal__foot { display: flex; justify-content: space-between; align-items: center; padding: 14px 22px; border-top: 1px solid var(--c-border); background: #fbfaf6; border-radius: 0 0 14px 14px; }
+.vac-modal .form-field { margin-bottom: 16px; }
+.vac-modal .form-label { display: block; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-text-muted); margin-bottom: 6px; }
+.vac-modal .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.vac-modal .vac-driver-static { font-size: 14px; font-weight: 500; padding: 8px 0; }
+.vac-modal .type-radio-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.vac-modal .type-radio { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--c-border-strong); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.1s; }
+.vac-modal .type-radio input { display: none; }
+.vac-modal .type-radio .dot { width: 8px; height: 8px; border-radius: 50%; }
+.vac-modal .type-radio.annual .dot { background: var(--c-success); }
+.vac-modal .type-radio.demand .dot { background: var(--c-info); }
+.vac-modal .type-radio.sick .dot { background: var(--c-error); }
+.vac-modal .type-radio.unpaid .dot { background: #6b5b8a; }
+.vac-modal .type-radio:hover { border-color: var(--c-accent); }
+.vac-modal .type-radio.is-selected { background: var(--c-accent-bg); border-color: var(--c-accent); color: var(--c-accent); }
+.vac-modal .vac-gcal-note { font-size: 12px; color: var(--c-text-muted); padding: 10px 12px; background: #fbfaf6; border: 1px solid var(--c-border); border-radius: 8px; }
 .vac-item__end { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
 .vac-days { font-size: 11px; font-weight: 600; font-family: var(--font-mono); color: var(--c-text-muted);
     background: var(--c-bg); border: 1px solid var(--c-border); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
