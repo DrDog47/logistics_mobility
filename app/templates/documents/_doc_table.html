@@ -12,6 +12,7 @@
 } %}
 {% set cols = 7 if can_edit else 6 %}
 {% if rows %}
+<div class="table-scroll">
 <table class="docs-table">
     <thead>
         <tr>
@@ -124,6 +125,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% else %}
 <p class="empty">{{ _('No documents yet') }}</p>
 {% endif %}

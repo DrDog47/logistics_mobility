@@ -618,6 +618,17 @@ h2 { font-size: 16px; }
 .country-flag { display: inline-block; padding: 2px 8px; background: #f3f1ec; border: 1px solid var(--c-border); border-radius: 5px; font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; }
 .doc-chip-count { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: var(--c-info-bg); color: var(--c-info); border: 1px solid #d1d9ea; border-radius: 5px; font-size: 11px; font-weight: 600; }
 
+/* ── Sizing & responsive rules ──────────────────────────────────────────────
+   Content-sized chips/badges/pills/buttons never wrap; rows of them scroll
+   horizontally rather than shrinking; tables scroll inside their card. */
+.pill, .doc-chip-count, .country-flag, .upload-mini-btn,
+.docs-table .row-actions a, .docs-table .row-actions button,
+.data-table .row-actions button, .file-actions a, .file-actions button,
+.tabs-bar .tab .count-badge, .tabs-bar .tab .alert-badge { white-space: nowrap; }
+/* Wrap a (possibly wide) table so it scrolls horizontally within its card
+   instead of overflowing the page or squishing nowrap cells. */
+.table-scroll { overflow-x: auto; }
+
 /* Expiry status badges (level == document_status level). */
 .badge {
     display: inline-block; padding: 1px 8px; border-radius: 999px;
